@@ -41,17 +41,25 @@
 marray=(3 5 6)
 
 
-for elem in ${marray[@]}
-do
-     echo $elem
-done
+# for elem in ${marray[@]}
+# do
+#      echo $elem
+# done
 
 
-for i in ${marray[@]}
-do
-   echo "Welcome $i times"
-done
+# for i in ${marray[@]}
+# do
+#    echo "Welcome $i times"
+# done
 
+# i=1
+
+
+# while [ $i -le 50000000 ]
+#     do 
+#         echo "number: $i"
+#         ((i=i+1))
+# done
 
 
 # WHILE LOOP - READ THROUGH A FILE LINE BY LINE
@@ -76,3 +84,24 @@ done
 # $ unset my_array[1]
 # $ echo ${my_array[@]}
 # foo baz
+
+
+# FUNCTION
+# function sayHello() {
+#   echo "Hello World"
+# }
+# sayHello
+
+# FUNCTION WITH PARAMS
+# function greet() {
+#   echo "Hello, I am $1 and I am $2"
+# }
+
+# greet "Brad" "36"
+
+
+function test() {
+    echo "I am $1$2"
+}
+
+test "bat" "man"
