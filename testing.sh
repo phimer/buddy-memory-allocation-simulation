@@ -101,7 +101,16 @@ marray=(3 5 6)
 
 
 function test() {
-    echo "I am $1$2"
+    local ret="I am $1$2"
+    echo "$ret"
 }
 
-test "bat" "man"
+
+result=$(test "bat" "man")
+echo $result
+#read -p "Enter your name: " NAME
+
+
+
+
+
