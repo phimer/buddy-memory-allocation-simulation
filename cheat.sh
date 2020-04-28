@@ -6,7 +6,7 @@
 # VARIABLES
 # Uppercase by convention
 # Letters, numbers, underscores
-NAME="Bob"
+# NAME="Bob"
 # echo "My name is $NAME"
 # echo "My name is ${NAME}"
 
@@ -138,23 +138,53 @@ NAME="Bob"
 
 ####################
 
-# array
+# ARRAY
 # array=(3 4 5)
 # echo ${array[1]}
 
-# add to array
+# ADD TO ARRAY
 # $ my_array=(foo bar)
 # $ my_array+=(baz)
 
-# remove from array
+# REMOVE FROM ARRAY
 # $ my_array=(foo bar baz)
 # $ unset my_array[1]
 # $ echo ${my_array[@]}
 # foo baz
 
-#FOR LOOP
+# FOR LOOP
 # marray=(3 5 6)
 # for elem in ${marray[@]}
 # do
 #      echo $elem
 # done
+
+
+# WHILE LOOP
+# while [ $i -le 50000000 ]
+#     do 
+#         echo "number: $i"
+#         ((i=i+1))
+# done
+
+# RETURN FUNCTION
+# function test() {
+#     local ret="I am $2$1$3"
+#     echo "$ret"
+# }
+
+# result=$(test "bat""man""pig")
+# echo $result
+
+
+
+# RETURN FUNCTION
+# function myfunc()
+# {
+#     local  myresult='some value'
+#     echo "$myresult"
+# }
+
+# result=$(myfunc)   # or result=`myfunc`
+# echo $result
+# echo $(myfunc)

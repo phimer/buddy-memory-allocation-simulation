@@ -101,16 +101,16 @@ marray=(3 5 6)
 
 
 function test() {
-    local ret="I am $2$1$3"
+    local ret="I am $2$1"
     echo "$ret"
 }
 
-result=$(test "bat""man""pig")
+result=$(test "bat""man")
 echo $result
 
 
 #read -p "Enter your name: " NAME
-echo "hey $NAME, $result"
+#echo "hey $NAME, $result"
 
 
 
