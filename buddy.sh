@@ -6,12 +6,13 @@ HARDMEM=1024
 MEMORY=$HARDMEM
 POTMEM=$HARDMEM
 
-a=6
-b=2
-a=$(($a/2))
-#echo $(($a/$b))
-echo "a = $a"
+# a=6
+# b=2
+# a=$(($a/2))
+# #echo $(($a/$b))
+# echo "a = $a"
 
+list=()
 
 
 #returns pot space used for the task
@@ -49,60 +50,58 @@ function checkIfSpace() {   #task, memleft
 }
 
 function allocate() {
-    
+    list+=($1)
+
 }
+
+function memleft() {
+    local mem=$1
+    local potmemused=0
+    for elem in ${list[@]}
+    do 
+        potmemused=$(($potmemused+$elem))
+    done
+    
+    local memleft=$(($mem-$potmemused))
+    echo "$memleft"
+}
+
+function deallocate() {
+    local taskindx=$1
+
+    if [ $taskindx -gt ${#list[@]} ] || [ $taskindx -lt 0 ]
+    then 
+        echo "Task $taskindx doesn't exist"
+    else
+        local ind=$(($taskindx-1))
+      
+        unset list[$ind]
+    fi
+    #echo "$list"
+}
+
+
 
 res=$(allocateCalc 1024 128)
 res=$(($res+22))
-echo $res
+echo "allocatecalc: $res"
 
 k=$(checkIfSpace 300 240)
-echo $k
+echo "checkifspace $k"
+
+allocate 120
+allocate 240
+allocate 510
+allocate 513
+echo "allocate ${list[@]}"
+
+ree=$(memleft 1024)
+echo "memleft: $ree"
+
+echo ${list[@]}
+
+deallocate 4
+echo ${list[@]}
 
 
-
-# IF-ELSE
-# if [ "$NAME" == "Brad" ]
-# then
-#   echo "Your name is Brad"
-# else 
-#   echo "Your name is NOT Brad"
-# fi
-
-
-# echo $(allocateCalc 1024 120)
-# AC=$(allocateCalc 1024 280)
-# echo $AC
-###############
-# I=0
-# function test() {
-    
-#     while [ $I -le 5 ]
-#         do  
-#             #echo $I
-#             echo $(($1+3))
-#             ((I=I+1))
-#     done
-# }
-
-# test 3
-
-
-# function myfunc()
-# {
-#     local  myresult='some value'
-#     echo "$myresult"
-# }
-
-# result=$(myfunc)   # or result=`myfunc`
-# echo $result
-# echo $(myfunc)
-# RETURN FUNCTION
-# function test() {
-#     local ret="I am $2$1$3"
-#     echo "$ret"
-# }
-
-# result=$(test "bat""man""pig")
-# echo $result
 

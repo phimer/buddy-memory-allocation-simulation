@@ -152,6 +152,9 @@
 # $ echo ${my_array[@]}
 # foo baz
 
+# ARRAY LENGTH
+# echo "${#distro[@]}"
+
 # FOR LOOP
 # marray=(3 5 6)
 # for elem in ${marray[@]}

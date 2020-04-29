@@ -38,9 +38,16 @@
 #     mv $FILE $NEW-$FILE
 # done
 
-marray=(3 5 6)
+marray=(3 5 6 5) 
 
+echo "${#marray[@]}"
 
+if [ ${#marray[@]} -eq 3 ]
+then    
+    echo 'yay'
+else
+    echo "nay"
+fi
 # for elem in ${marray[@]}
 # do
 #      echo $elem
@@ -80,9 +87,9 @@ marray=(3 5 6)
 # $ my_array+=(baz)
 
 # remove from array
-# $ my_array=(foo bar baz)
-# $ unset my_array[1]
-# $ echo ${my_array[@]}
+# my_array=(foo bar baz)
+# unset my_array[1]
+# echo ${my_array[@]}
 # foo baz
 
 
@@ -100,13 +107,13 @@ marray=(3 5 6)
 # greet "Brad" "36"
 
 
-function test() {
-    local ret="I am $2$1"
-    echo "$ret"
-}
+# function test() {
+#     local ret="I am $2$1"
+#     echo "$ret"
+# }
 
-result=$(test "bat""man")
-echo $result
+# result=$(test "bat""man")
+# echo $result
 
 
 #read -p "Enter your name: " NAME
