@@ -2,9 +2,7 @@
 
 UNO=false
 
-HARDMEM=1024
-MEMORY=$HARDMEM
-POTMEM=$HARDMEM
+mem=1024
 
 # a=6
 # b=2
@@ -80,6 +78,30 @@ function deallocate() {
     #echo "$list"
 }
 
+check0=true
+check1=true
+
+
+while [ $check0 = true ]
+do 
+    read -p "allocate or deallocate" inp
+
+    if [ $inp = "a" ]
+    then
+        echo ":)"
+        while [ $check1 = true ]
+        do
+            read -p "allocate wert eingeben" allocateInput
+            local meemLeft=$(memleft $mem)
+            local allocateCheck=$(allocate $allocateInput $)
+            if [ ]
+    else
+        echo ":("
+    fi
+done
+
+#read -p "Enter your name: " NAME
+#echo "hey $NAME, $result"
 
 
 res=$(allocateCalc 1024 128)

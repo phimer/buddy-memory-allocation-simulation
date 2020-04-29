@@ -152,6 +152,10 @@
 # $ echo ${my_array[@]}
 # foo baz
 
+# REMOVE ITEM FROM ARRAY
+# removes everything after 2
+# list=("${list[@]:0:2}")
+
 # ARRAY LENGTH
 # echo "${#distro[@]}"
 
@@ -191,3 +195,11 @@
 # result=$(myfunc)   # or result=`myfunc`
 # echo $result
 # echo $(myfunc)
+
+
+# READ INPUT
+# read -p "Enter your name: " NAME
+# echo "hey $NAME, $result"
+
+
+
