@@ -1,6 +1,7 @@
 # chmod +x testing.sh
 # which bash
 
+# ./testing.sh
 
 #! /bin/bash
 
@@ -119,7 +120,7 @@
 # $ my_array=(foo bar)
 # $ my_array+=(baz)
 
-# REMOVE ITEM FROM ARRAY - easy way
+# REMOVE ITEM FROM ARRAY - !!!!sets array to NULL, does NOT delete it
 # $ my_array=(foo bar baz)
 # $ unset my_array[1]
 # $ echo ${my_array[@]}
@@ -128,7 +129,8 @@
 # REMOVE ITEM FROM ARRAY
 # removes everything after 2
 # list=("${list[@]:0:2}")
-
+# removes everything before 2(including 2) and everything after 3
+# list=("${list[@]:2:3}")
 # ARRAY LENGTH
 # echo "${#distro[@]}"
 
