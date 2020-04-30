@@ -1,3 +1,7 @@
+# chmod +x testing.sh
+# which bash
+
+
 #! /bin/bash
 
 # ECHO COMMAND

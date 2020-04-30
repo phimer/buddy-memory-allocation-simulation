@@ -92,11 +92,21 @@ do
         while [ $check1 = true ]
         do
             read -p "allocate wert eingeben" allocateInput
-            local meemLeft=$(memleft $mem)
-            local allocateCheck=$(allocate $allocateInput $)
-            if [ ]
+            local memoryLeft=$(memleft $mem)
+            local allocateCheck=$(allocate $allocateInput $memoryLeft)
+            if [ $allocateCheck = true ]
+            then
+                list=$(($list+=($allocateInput)))
+                temp=$(allocateCalc $mem $allocateInput)
+                echo "$allocateInput allocated: Task used $temp memory"
+                check1=false
+            else
+                echo "$allocateInput not allocated - not enough memory left"
+                check1=false
+            fi
+    
     else
-        echo ":("
+        echo "kkkkeeekek"
     fi
 done
 
