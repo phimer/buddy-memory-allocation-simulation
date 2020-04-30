@@ -1,124 +1,165 @@
-#! /usr/bin/bash
-
-# echo "Hell World"
+# #! /usr/bin/bash
 
 
-# NAME="Philip"
+
+# mem=1024
+
+# # a=6
+# # b=2
+# # a=$(($a/2))
+# # #echo $(($a/$b))
+# # echo "a = $a"
+
+# list=()
 
 
-# if [ $NAME == "Philip" ]
-# then
-#     echo "Your name is $NAME, same as me"
-# elif [ "$NAME" == "Jack" ]
-# then
-#     echo "Your name is $NAME, handsome"
-# else
-#     echo "Your name is weird"
-# fi
+# #returns pot space used for the task
+# function allocateCalc() {   #mem, task
+    
+#     local mem=$1
+#     local task=$2
+    
 
 
-# read -p "Enter your name: " NAME
-# echo "Hello $NAME, nice to meet you!"
+#     while [ "$task" -le "$mem" ]
+        
+#         do  
+#            mem=$(("$mem"/2))
+           
+#         done
+    
+#     mem=$(($mem*2))
+#     echo "$mem"
+# }
+
+# ero=$(allocateCalc $mem 0)
+# echo $ero
+# # ree=$(memleft 1024)
+# # echo "memleft: $ree"
 
 
-# val1 -eq val2 Returns true if the values are equal
-# val1 -ne val2 Returns true if the values are not equal
-# val1 -gt val2 Returns true if val1 is greater than val2
-# val1 -ge val2 Returns true if val1 is greater than or equal to val2
-# val1 -lt val2 Returns true if val1 is less than val2
-# val1 -le val2 Returns true if val1 is less than or equal to val2
 
 
-# FOR LOOP TO RENAME FILES
-# FILES=$(ls *.txt)
-# NEW="new"
-# for FILE in $FILES  
-#   do
-#     echo "Renaming $FILE to new-$FILE"
-#     mv $FILE $NEW-$FILE
-# done
-
-marray=(3 5 6 5) 
-
-echo "${#marray[@]}"
-
-if [ ${#marray[@]} -eq 3 ]
-then    
-    echo 'yay'
-else
-    echo "nay"
-fi
-# for elem in ${marray[@]}
-# do
-#      echo $elem
-# done
+# #checks if enough memory is left for task
+# function checkIfSpace() {   #task, memleft
+    
+#     local task=$1
+#     local memleft=$2
+    
+#     if [ $memleft -ge $task ]
+#     then 
+#         local check=true
+#     else
+#         local check=false
+#     fi
+#     echo "$check"        
+# }
 
 
-# for i in ${marray[@]}
-# do
-#    echo "Welcome $i times"
-# done
-
-# i=1
 
 
-# while [ $i -le 50000000 ]
+# function allocate() {
+#     list+=("$1")
+
+# }
+# # checks how much memory is left (calculates mem-all active tasks)
+# function memleft() {
+#     local mem=$1 #same as mem, might not need argument
+#     local potmemused=0
+#     for elem in ${list[@]}  #adds all tasks up to see how much memory is used
 #     do 
-#         echo "number: $i"
-#         ((i=i+1))
-# done
+#         potmemused=$(($potmemused+$elem))
+#     done
+    
+#     local memleft=$(($mem-$potmemused)) #gesamt memory - summe aller tasks
+#     echo "$memleft"
+# }
 
 
-# WHILE LOOP - READ THROUGH A FILE LINE BY LINE
-# LINE=1
-# while read -r CURRENT_LINE
-#   do
-#     echo "$LINE: $CURRENT_LINE"
-#     ((LINE++))
-# done < "./new-1.txt"
+
+# # löscht tasks aus liste
+# function deallocate() {
+#     local taskindx=$1 #index des tasks den man beenden will
+
+#     if [ "$taskindx" -gt ${#list[@]} ] || [ "$taskindx" -lt 0 ] #checkt ob die eingegebene zahl überhaupt index der liste ist oder ob eingegebene zahl kleiner 0
+#     then 
+#         echo "Task $taskindx doesn't exist" #wenn task nicht teil der liste ist
+#     else
+#         local ind="$taskindx-1" #wenn task teil der liste ist wird er aus der liste gelöscht
+      
+#         unset list["$ind"] #//noch nicht sicher ob funktioniert
+#     fi
+#     #echo "$list"
+# }
+# ##############################################################################################
+# # check0=true #wichtig für while loops
+# # check1=true #same
 
 
-# array
-# array=(3 4 5)
-# echo ${array[1]}
+# # while [ $check0 = true ]
+# # do 
+# #     read -p "allocate or deallocate or show tasks" inp
+# #     check1=true
+# #     if [ "$inp" = "a" ]
+# #     then
+# #         echo ":)"
+# #         while [ $check1 = true ]
+# #         do
+# #             read -p "allocate wert eingeben" allocateInput
+# #             memoryLeft=$(memleft "$mem") #wie viel memory ist left
+# #             echo "memory left before allocate: $memoryLeft"
+# #             allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
+# #             echo "allocate check: $allocateCheck"
+# #             if [ "$allocateCheck" = true ]
+# #             then
+                
+# #                 temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
+# #                 list+=("$temp") #fügt potenzspeicher in liste ein
+# #                 echo "$allocateInput allocated: Task used $temp memory"
+# #                 memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus
+# #                 echo "Memory left: $memoryLeft"
+# #                 check1=false #man kommt eine while loop zurück //bleibt denke nicht so drin
 
-# add to array
-# $ my_array=(foo bar)
-# $ my_array+=(baz)
+# #             else
+# #                 echo "$allocateInput not allocated - not enough memory left"
+# #                 check1=false
+# #             fi
+# #         done
+# #     elif [ "$inp" = "t" ] 
+# #     then
+# #         echo "active tasks: ${list[@]}"
+    
+# #     else
+# #         echo "kkkkeeekk"
+# #     fi
+# # done
 
-# remove from array
-# my_array=(foo bar baz)
+# #read -p "Enter your name: " NAME
+# #echo "hey $NAME, $result"
+# ##############################################################################################
+
+# res=$(allocateCalc 1024 128)
+# res=$(($res+22))
+# echo "allocatecalc: $res"
+
+
+# # allocate 120
+# # allocate 240
+# # allocate 510
+# # allocate 513
+# # echo "allocate ${list[@]}"
+
+# # ree=$(memleft 1024)
+# # echo "memleft: $ree"
+
+# # echo "${list[@]}"
+
+# # deallocate 4
+# # echo "${list[@]}"
+
+
+# my_array=(1 2 3)
 # unset my_array[1]
 # echo ${my_array[@]}
-# foo baz
-
-
-# FUNCTION
-# function sayHello() {
-#   echo "Hello World"
-# }
-# sayHello
-
-# FUNCTION WITH PARAMS
-# function greet() {
-#   echo "Hello, I am $1 and I am $2"
-# }
-
-# greet "Brad" "36"
-
-
-# function test() {
-#     local ret="I am $2$1"
-#     echo "$ret"
-# }
-
-# result=$(test "bat""man")
-# echo $result
-
-
-#read -p "Enter your name: " NAME
-#echo "hey $NAME, $result"
-
-
-
-
+# for host in {!my_array[@]}
+#     echo

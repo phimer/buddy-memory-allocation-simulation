@@ -72,7 +72,10 @@ function deallocate() {
     else
         local ind="$taskindx-1" #wenn task teil der liste ist wird er aus der liste gelöscht
         unset list["$ind"] #//noch nicht sicher ob funktioniert
+
         echo "task $taskindx deallocated"
+        newarr=$list
+        echo $newarr
     fi
     #echo "$list"
 }
