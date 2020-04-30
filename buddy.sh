@@ -1,6 +1,6 @@
 #! /usr/bin/bash
 
-UNO=false
+
 
 mem=1024
 
@@ -48,7 +48,7 @@ function checkIfSpace() {   #task, memleft
 }
 
 function allocate() {
-    list+=($1)
+    list+=("$1")
 
 }
 
@@ -71,42 +71,47 @@ function deallocate() {
     then 
         echo "Task $taskindx doesn't exist"
     else
-        local ind=$(($taskindx-1))
+        local ind="$taskindx-1"
       
-        unset list[$ind]
+        unset list["$ind"]
     fi
     #echo "$list"
 }
 
 check0=true
 check1=true
-asdfasdf
+
 
 while [ $check0 = true ]
 do 
     read -p "allocate or deallocate" inp
-
-    if [ $inp = "a" ]
+    check1=true
+    if [ "$inp" = "a" ]
     then
         echo ":)"
         while [ $check1 = true ]
         do
             read -p "allocate wert eingeben" allocateInput
-            local memoryLeft=$(memleft $mem)
-            local allocateCheck=$(allocate $allocateInput $memoryLeft)
-            if [ $allocateCheck = true ]
+            memoryLeft=$(memleft "$mem")
+            echo "$memoryLeft"
+            allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft")
+            echo "$allocateCheck"
+            if [ "$allocateCheck" = true ]
             then
-                list=$(($list+=($allocateInput)))
-                temp=$(allocateCalc $mem $allocateInput)
+                
+                temp=$(allocateCalc "$mem" "$allocateInput")
+                list+=("$temp")
                 echo "$allocateInput allocated: Task used $temp memory"
+                memoryLeft=$(memleft "$mem")
+                echo "Memory left: $memoryLeft"
                 check1=false
             else
                 echo "$allocateInput not allocated - not enough memory left"
                 check1=false
             fi
-    
+        done
     else
-        echo "kkkkeeekek"
+        echo "kkkkeeekk"
     fi
 done
 
@@ -130,10 +135,10 @@ echo "allocate ${list[@]}"
 ree=$(memleft 1024)
 echo "memleft: $ree"
 
-echo ${list[@]}
+echo "${list[@]}"
 
 deallocate 4
-echo ${list[@]}
+echo "${list[@]}"
 
 
 
