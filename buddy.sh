@@ -80,7 +80,7 @@ function deallocate() {
 
 check0=true
 check1=true
-
+asdfasdf
 
 while [ $check0 = true ]
 do 
