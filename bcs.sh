@@ -117,13 +117,13 @@
 # echo ${array[1]}
 
 # ADD TO ARRAY
-# $ my_array=(foo bar)
-# $ my_array+=(baz)
+# my_array=(foo bar)
+# my_array+=(baz)
 
-# REMOVE ITEM FROM ARRAY - !!!!sets array to NULL, does NOT delete it
-# $ my_array=(foo bar baz)
-# $ unset my_array[1]
-# $ echo ${my_array[@]}
+# REMOVE ITEM FROM ARRAY - !!!!sets item in array to NULL, does NOT delete it
+# my_array=(foo bar baz)
+# unset my_array[1]
+# echo ${my_array[@]}
 # foo baz
 
 # REMOVE ITEM FROM ARRAY
@@ -134,6 +134,11 @@
 # ARRAY LENGTH
 # echo "${#distro[@]}"
 
+# ARRAY LENGTH
+# echo "${#distro[@]}"
+
+# CLONE ARRAY
+# arrClone=("${my_array[@]}")
 
 # USER INPUT
 # read -p "Enter your name: " NAME

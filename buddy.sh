@@ -4,14 +4,11 @@
 
 mem=1024
 
-# a=6
-# b=2
-# a=$(($a/2))
-# #echo $(($a/$b))
-# echo "a = $a"
+re='[a-zA-Z]'
 
-list=()
+list=() #liste für die tasks
 
+###functions###
 
 #returns pot space used for the task
 function allocateCalc() {   #mem, task
@@ -50,6 +47,8 @@ function allocate() {
     list+=("$1")
 
 }
+
+
 # checks how much memory is left (calculates mem-all active tasks)
 function memleft() {
     local mem=$1 #same as mem, might not need argument
@@ -62,6 +61,8 @@ function memleft() {
     local memleft=$(($mem-$potmemused)) #gesamt memory - summe aller tasks
     echo "$memleft"
 }
+
+
 # löscht tasks aus liste
 function deallocate() {
     local taskindx=$1 #index des tasks den man beenden will
@@ -74,92 +75,133 @@ function deallocate() {
         unset list["$ind"] #//noch nicht sicher ob funktioniert
 
         echo "task $taskindx deallocated"
-        newarr=$list
-        echo $newarr
+        listClone=("${list[@]}") #unset löscht array element nicht sondern ersetzt es durch null, deshalb wird array auf ein neues kopiert, sodass null werte raus fallen
+        list=("${listClone[@]}") #list wieder zurück kopieren, da mit list gearbeitet wird
     fi
     #echo "$list"
 }
 
+# function checkIfNumber() {
+    
+#     local c=true
+#     local input=$1
+#     if [[ "$input" =~ $re ]]
+#             then
+#                c=false
+              
+#     fi
+#     echo "$c"
+# }
+
 check0=true #wichtig für while loops
 check1=true #same
 
+###main###
 
 while [ $check0 = true ]
 do 
-    read -p "allocate or deallocate or show tasks" inp
+    read -p "allocate or deallocate or show tasks or exit" inp
     check1=true
-    if [ "$inp" = "a" ]
+    if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]
     then
-        echo ":)"
+      
         while [ $check1 = true ]
         do
-            read -p "allocate wert eingeben" allocateInput
-            if [ $allocateInput = 0 ]
+            read -p "Allocate Wert eingeben" allocateInput
+            if [[ "$allocateInput" =~ $re ]]
             then
-                echo "Kann keinen Task mit 0 allocaten (macht keinen sinn)"
+               
+                printf "\nEingabewert muss eine Zahl sein\n"
+                echo " "
+                break
+                
+            fi
+            if [ $allocateInput -le 0 ]
+            then
+                
+                printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
+                echo ""
             else
+                echo ""
                 memoryLeft=$(memleft "$mem") #wie viel memory ist left
-                echo "memory left before allocate: $memoryLeft"
+                #echo "memory left before allocate: $memoryLeft"
                 allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
-                echo "allocate check: $allocateCheck"
+                #echo "allocate check: $allocateCheck"
                 if [ "$allocateCheck" = true ]
                 then
                     
                     temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
-                    echo "temp: $temp"
+                    #   echo "temp: $temp"
                     list+=("$temp") #fügt potenzspeicher in liste ein
-                    echo "task($allocateInput) allocated: Task used $temp memory"
+                    echo "Task ($allocateInput) allocated: Task used $temp memory"
                     memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus
                     echo "Memory left: $memoryLeft"
-                    check1=false #man kommt eine while loop zurück //bleibt denke nicht so drin
-
+                    echo ""
+                    #check1=false #man kommt eine while loop zurück
+                    break
                 else
                     echo "$allocateInput not allocated - not enough memory left"
-                    check1=false
+                    echo ""
+                    #check1=false
+                    break
                 fi
             fi
         done
-    elif [ "$inp" = "t" ] 
+    elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ]
     then
-        echo "active tasks: ${list[@]}"
-    elif [ "$inp" = "d" ]
+        echo ""
+        echo "Active tasks: ${list[@]}"
+        echo ""
+    elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ]
     then
         read -p "welchen task deallocaten?" deallocInput
+        echo ""
         deallocate "$deallocInput"
        
-        echo "remaining active tasks ${list[@]}"
+        echo "Remaining active tasks: ${list[@]}"
 
+        echo ""
 
 
     else
-        echo "kkkkeeekk"
+        echo "Command not recognized - enter again"
     fi
 done
 
 #read -p "Enter your name: " NAME
 #echo "hey $NAME, $result"
 
+#testing
+# res=$(allocateCalc 1024 128)
+# res=$(($res+22))
+# echo "allocatecalc: $res"
 
-res=$(allocateCalc 1024 128)
-res=$(($res+22))
-echo "allocatecalc: $res"
+# k=$(checkIfSpace 300 240)
+# echo "checkifspace $k"
 
-k=$(checkIfSpace 300 240)
-echo "checkifspace $k"
+# allocate 120
+# allocate 240
+# allocate 510
+# allocate 513
+# echo "allocate ${list[@]}"
 
-allocate 120
-allocate 240
-allocate 510
-allocate 513
-echo "allocate ${list[@]}"
+# ree=$(memleft 1024)
+# echo "memleft: $ree"
 
-ree=$(memleft 1024)
-echo "memleft: $ree"
+# echo "${list[@]}"
 
-echo "${list[@]}"
-
-deallocate 4
-echo "${list[@]}"
+# deallocate 4
+# echo "${list[@]}"
 
 
 
+##notes
+
+#  if [[ "$allocateInput" =~ $re ]]
+#             then
+               
+#                 printf "\nEingabewert muss eine Zahl sein\n"
+#                 echo " "
+#                 break
+                
+#             fi
