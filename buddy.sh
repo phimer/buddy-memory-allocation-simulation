@@ -5,6 +5,7 @@
 mem=1024
 
 re='[a-zA-Z]'
+num='[0-9]'
 
 list=() #liste für die tasks
 
@@ -97,77 +98,95 @@ check0=true #wichtig für while loops
 check1=true #same
 
 ###main###
+while [ true ]
+do
+    read -p "Speicher eingeben" memoryInput
 
-while [ $check0 = true ]
-do 
-    read -p "allocate or deallocate or show tasks or exit" inp
-    check1=true
-    if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]
-    then
-      
-        while [ $check1 = true ]
-        do
-            read -p "Allocate Wert eingeben" allocateInput
-            if [[ "$allocateInput" =~ $re ]]
+    if [ $memoryInput = 1024 ]
+    then 
+
+        while [ $check0 = true ]
+        do 
+            read -p "allocate or deallocate or show tasks or exit" inp
+            check1=true
+            if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]
             then
-               
-                printf "\nEingabewert muss eine Zahl sein\n"
-                echo " "
-                break
-                
-            fi
-            if [ $allocateInput -le 0 ]
-            then
-                
-                printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
-                echo ""
-            else
-                echo ""
-                memoryLeft=$(memleft "$mem") #wie viel memory ist left
-                #echo "memory left before allocate: $memoryLeft"
-                allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
-                #echo "allocate check: $allocateCheck"
-                if [ "$allocateCheck" = true ]
-                then
+            
+                while [ $check1 = true ]
+                do
+                    read -p "Allocate Wert eingeben" allocateInput
+                    if [[ "$allocateInput" =~ $re ]]
+                    then
                     
-                    temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
-                    #   echo "temp: $temp"
-                    list+=("$temp") #fügt potenzspeicher in liste ein
-                    echo "Task ($allocateInput) allocated: Task used $temp memory"
-                    memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus
-                    echo "Memory left: $memoryLeft"
-                    echo ""
-                    #check1=false #man kommt eine while loop zurück
+                        printf "\nEingabewert muss eine Zahl sein\n"
+                        echo " "
+                        break
+                        
+                    fi
+                    if [ $allocateInput -le 0 ]
+                    then
+                        
+                        printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
+                        echo ""
+                    else
+                        echo ""
+                        memoryLeft=$(memleft "$mem") #wie viel memory ist left
+                        #echo "memory left before allocate: $memoryLeft"
+                        allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
+                        #echo "allocate check: $allocateCheck"
+                        if [ "$allocateCheck" = true ]
+                        then
+                            
+                            temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
+                            #   echo "temp: $temp"
+                            list+=("$temp") #fügt potenzspeicher in liste ein
+                            echo "Task ($allocateInput) allocated: Task used $temp memory"
+                            memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus
+                            echo "Memory left: $memoryLeft"
+                            echo ""
+                            #check1=false #man kommt eine while loop zurück
+                            break
+                        else
+                            echo "$allocateInput not allocated - not enough memory left"
+                            echo ""
+                            #check1=false
+                            break
+                        fi
+                    fi
+                done
+            elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ]
+            then
+                echo ""
+                echo "Active tasks: ${list[@]}"
+                echo ""
+            elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ]
+            then
+                read -p "welchen task deallocaten?" deallocInput
+
+                if ![ $deallocInput =~ $num ]
+                then
+                    echo "Muss Zahl sein"
                     break
                 else
-                    echo "$allocateInput not allocated - not enough memory left"
                     echo ""
-                    #check1=false
-                    break
+                    deallocate "$deallocInput"
+                
+                    echo "Remaining active tasks: ${list[@]}"
+
+                    echo ""
                 fi
+            elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
+            then
+                echo "Programm beendet"
+                exit 1
+            else
+                echo "Command not recognized - enter again"
             fi
         done
-    elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ]
-    then
-        echo ""
-        echo "Active tasks: ${list[@]}"
-        echo ""
-    elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ]
-    then
-        read -p "welchen task deallocaten?" deallocInput
-        echo ""
-        deallocate "$deallocInput"
-       
-        echo "Remaining active tasks: ${list[@]}"
-
-        echo ""
-
-
     else
-        echo "Command not recognized - enter again"
+        echo "Eingabe muss eine Zweierpotenz sein"
     fi
 done
-
 #read -p "Enter your name: " NAME
 #echo "hey $NAME, $result"
 
