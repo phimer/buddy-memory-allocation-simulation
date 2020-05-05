@@ -2,7 +2,7 @@
 
 
 
-mem=1024
+#mem=1024
 
 re='[a-zA-Z]'
 num='[0-9]'
@@ -11,7 +11,7 @@ list=() #liste für die tasks
 
 ###functions###
 
-#returns pot space used for the task
+#returns pot space used for the 
 function allocateCalc() {   #mem, task
     
     local mem=$1
@@ -27,15 +27,39 @@ function allocateCalc() {   #mem, task
     mem=$(("$mem"*2)) #dann ein mal verdoppeln
     echo "$mem"
 }
+#nächst kleinere Zweierpotenzmenge einer Zahl finden,benötigt für checkIfSpace()
+function nextSmallerPot() {
+    
+    local memory=$1
+    local countUp=1
+    
+    while [[ $countUp -le $memory ]]
+    do  
+        countUp=$(("$countUp"*2))
+    done
+    countUp=$(("$countUp"/2))
+    
+    echo "$countUp"
+}
 
 
-#checks if enough memory is left for task
+
+#checks if enough POT!!memory is left for task
 function checkIfSpace() {   #task, memleft
     
     local task=$1
-    local memleft=$2
+    local memory=$2
+    local calcMem=$(nextSmallerPot "$memory")
     
-    if [ "$memleft" -ge "$task" ]
+
+#    while [[ "$calcMem" -le $memory ]] #to get next smallest pot
+#     do  
+#         calcMem=$(("$calcMem"*2))
+#     done
+#     calcMem=$(("$calcMem"/2))
+    
+    
+    if [ "$calcMem" -ge "$task" ]
     then 
         local check=true
     else
@@ -82,32 +106,28 @@ function deallocate() {
     #echo "$list"
 }
 
-# function checkIfNumber() {
-    
-#     local c=true
-#     local input=$1
-#     if [[ "$input" =~ $re ]]
-#             then
-#                c=false
-              
-#     fi
-#     echo "$c"
-# }
+# checkt ob Zweierpotenz
+function checkIfPowerOfTwo() {
+
+    n=$1
+    (( n > 0 && (n & (n - 1)) == 0 )) #von so, keine ahnung was hier returned wird?############remove###############https://unix.stackexchange.com/questions/481552/check-if-numbers-from-command-line-are-powers-of-2/481558
+}
 
 check0=true #wichtig für while loops
 check1=true #same
+initCheck=true
 
 ###main###
-while [ true ]
+while [ $initCheck = true ]
 do
     read -p "Speicher eingeben" memoryInput
-
-    if [ $memoryInput = 1024 ]
+    mem=$memoryInput
+    if [[ "$memoryInput" =~ $num ]] && checkIfPowerOfTwo "$memoryInput" = true
     then 
 
         while [ $check0 = true ]
         do 
-            read -p "allocate or deallocate or show tasks or exit" inp
+            read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp
             check1=true
             if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]
             then
@@ -131,18 +151,21 @@ do
                     else
                         echo ""
                         memoryLeft=$(memleft "$mem") #wie viel memory ist left
-                        #echo "memory left before allocate: $memoryLeft"
+                        echo "memoryLeft before allocate: $memoryLeft"
+                        echo "mem $mem"
+                        #declare -i pot=$(nextSmallerPot "$memoryLeft")
                         allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
-                        #echo "allocate check: $allocateCheck"
+                        echo "allocate check: $allocateCheck"
                         if [ "$allocateCheck" = true ]
                         then
                             
                             temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
-                            #   echo "temp: $temp"
+                            echo "temp: $temp"
                             list+=("$temp") #fügt potenzspeicher in liste ein
                             echo "Task ($allocateInput) allocated: Task used $temp memory"
                             memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus
                             echo "Memory left: $memoryLeft"
+                            echo "mem $mem"
                             echo ""
                             #check1=false #man kommt eine while loop zurück
                             break
@@ -158,69 +181,48 @@ do
             then
                 echo ""
                 echo "Active tasks: ${list[@]}"
+                memleee=$(memleft "$mem")
+                echo "Remaining Memory: $memleee"
+                singleTaskMem=$(nextSmallerPot "$memleee")
+                echo "Höchst mögliche single task size: $singleTaskMem"
                 echo ""
             elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ]
             then
-                read -p "welchen task deallocaten?" deallocInput
+                read -p "Welchen Task deallocaten?" deallocInput
 
-                if ![ $deallocInput =~ $num ]
+                if ! [[ $deallocInput =~ $num ]]
                 then
-                    echo "Muss Zahl sein"
-                    break
+                    echo " "
+                    echo "Eingabewert muss eine Zahl sein"
+                    echo " "
+                    #break
                 else
                     echo ""
                     deallocate "$deallocInput"
                 
                     echo "Remaining active tasks: ${list[@]}"
-
+                    memleee=$(memleft "$mem")
+                    echo "Remaining Memory: $memleee"
                     echo ""
                 fi
             elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
             then
                 echo "Programm beendet"
                 exit 1
+             elif [ "$inp" = "mem" ]
+            then
+                echo "mem $mem"
+                memleee=$(memleft "$mem")
+                echo "memLeft $memleee"
+                singleTaskMem=$(nextSmallerPot "$memleee")
+                echo "Höchst mögliche single task size: $singleTaskMem"
             else
-                echo "Command not recognized - enter again"
+                echo "Command nicht erkannt - bitte erneut eingeben"
             fi
         done
     else
+        echo " "
         echo "Eingabe muss eine Zweierpotenz sein"
+        echo " "
     fi
 done
-#read -p "Enter your name: " NAME
-#echo "hey $NAME, $result"
-
-#testing
-# res=$(allocateCalc 1024 128)
-# res=$(($res+22))
-# echo "allocatecalc: $res"
-
-# k=$(checkIfSpace 300 240)
-# echo "checkifspace $k"
-
-# allocate 120
-# allocate 240
-# allocate 510
-# allocate 513
-# echo "allocate ${list[@]}"
-
-# ree=$(memleft 1024)
-# echo "memleft: $ree"
-
-# echo "${list[@]}"
-
-# deallocate 4
-# echo "${list[@]}"
-
-
-
-##notes
-
-#  if [[ "$allocateInput" =~ $re ]]
-#             then
-               
-#                 printf "\nEingabewert muss eine Zahl sein\n"
-#                 echo " "
-#                 break
-                
-#             fi
