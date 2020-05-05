@@ -158,8 +158,25 @@
 # # echo "${list[@]}"
 
 
-# my_array=(1 2 3)
-# unset my_array[1]
-# echo ${my_array[@]}
-# for host in {!my_array[@]}
-#     echo
+my_array=(1 2 3)
+
+
+echo "array ${my_array[@]}"
+
+unset my_array[1]
+
+echo "array after unset ${my_array[@]}"
+
+
+
+
+arrClone=("${my_array[@]}")
+
+echo "arrclone ${arrClone[@]}"
+
+unset my_array[1]
+unset arrClone[1]
+echo "###unset####"
+echo "array ${my_array[@]}"
+echo "arrclone ${arrClone[@]}"
+echo "###unsetagain###"
