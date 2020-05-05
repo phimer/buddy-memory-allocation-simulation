@@ -96,12 +96,13 @@ function deallocate() {
 
 check0=true #wichtig für while loops
 check1=true #same
+initCheck=true
 
 ###main###
-while [ true ]
+while [ $initCheck = true ]
 do
     read -p "Speicher eingeben" memoryInput
-
+    initCheck=false
     if [ $memoryInput = 1024 ]
     then 
 
@@ -163,7 +164,7 @@ do
             then
                 read -p "welchen task deallocaten?" deallocInput
 
-                if ![ $deallocInput =~ $num ]
+                if ! [[ $deallocInput =~ $num ]]
                 then
                     echo "Muss Zahl sein"
                     break
@@ -180,7 +181,7 @@ do
                 echo "Programm beendet"
                 exit 1
             else
-                echo "Command not recognized - enter again"
+                echo "Command nicht erkannt - bitte erneut eingeben"
             fi
         done
     else

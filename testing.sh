@@ -163,3 +163,11 @@
 # echo ${my_array[@]}
 # for host in {!my_array[@]}
 #     echo
+
+
+if ! [ 3 = 3 ]
+then
+    echo "good"
+else 
+    echo "bad"
+fi
