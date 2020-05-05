@@ -52,13 +52,6 @@ function checkIfSpace() {   #task, memleft
     local calcMem=$(nextSmallerPot "$memory")
     
 
-#    while [[ "$calcMem" -le $memory ]] #to get next smallest pot
-#     do  
-#         calcMem=$(("$calcMem"*2))
-#     done
-#     calcMem=$(("$calcMem"/2))
-    
-    
     if [ "$calcMem" -ge "$task" ]
     then 
         local check=true
@@ -99,11 +92,11 @@ function deallocate() {
         local ind="$taskindx-1" #wenn task teil der liste ist wird er aus der liste gelöscht
         unset list["$ind"] #//noch nicht sicher ob funktioniert
 
-        echo "task $taskindx deallocated"
+        echo "Task $taskindx deallocated"
         listClone=("${list[@]}") #unset löscht array element nicht sondern ersetzt es durch null, deshalb wird array auf ein neues kopiert, sodass null werte raus fallen
         list=("${listClone[@]}") #list wieder zurück kopieren, da mit list gearbeitet wird
     fi
-    #echo "$list"
+    
 }
 
 # checkt ob Zweierpotenz
@@ -113,26 +106,26 @@ function checkIfPowerOfTwo() {
     (( n > 0 && (n & (n - 1)) == 0 )) #von so, keine ahnung was hier returned wird?############remove###############https://unix.stackexchange.com/questions/481552/check-if-numbers-from-command-line-are-powers-of-2/481558
 }
 
-check0=true #wichtig für while loops
-check1=true #same
-initCheck=true
+# check0=true #wichtig für while loops
+# check1=true #same
+# initCheck=true
 
 ###main###
-while [ $initCheck = true ]
+while [ true ]
 do
     read -p "Speicher eingeben" memoryInput
     mem=$memoryInput
     if [[ "$memoryInput" =~ $num ]] && checkIfPowerOfTwo "$memoryInput" = true
     then 
 
-        while [ $check0 = true ]
+        while [ true ]
         do 
             read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp
-            check1=true
+            #check1=true
             if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]
             then
             
-                while [ $check1 = true ]
+                while [ true ]
                 do
                     read -p "Allocate Wert eingeben" allocateInput
                     if [[ "$allocateInput" =~ $re ]]
@@ -151,23 +144,23 @@ do
                     else
                         echo ""
                         memoryLeft=$(memleft "$mem") #wie viel memory ist left
-                        echo "memoryLeft before allocate: $memoryLeft"
-                        echo "mem $mem"
+                        #echo "memoryLeft before allocate: $memoryLeft"#######testing
+                        #echo "mem $mem"#####testing
                         #declare -i pot=$(nextSmallerPot "$memoryLeft")
                         allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
-                        echo "allocate check: $allocateCheck"
+                        #echo "allocate check: $allocateCheck"####testing
                         if [ "$allocateCheck" = true ]
                         then
                             
                             temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
-                            echo "temp: $temp"
+                            #echo "temp: $temp"####testing
                             list+=("$temp") #fügt potenzspeicher in liste ein
                             echo "Task ($allocateInput) allocated: Task used $temp memory"
                             memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus
-                            echo "Memory left: $memoryLeft"
-                            echo "mem $mem"
+                            #echo "Memory left: $memoryLeft"####testing
+                            #echo "mem $mem"####testing
                             echo ""
-                            #check1=false #man kommt eine while loop zurück
+                            #check1=false #man kommt eine while loop zurück###egal
                             break
                         else
                             echo "$allocateInput not allocated - not enough memory left"
@@ -181,6 +174,7 @@ do
             then
                 echo ""
                 echo "Active tasks: ${list[@]}"
+                echo ""
                 memleee=$(memleft "$mem")
                 echo "Remaining Memory: $memleee"
                 singleTaskMem=$(nextSmallerPot "$memleee")
