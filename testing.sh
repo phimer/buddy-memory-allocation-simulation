@@ -75,10 +75,10 @@ function memleft() {
     local potmemused=0
     for elem in ${list[@]}  #adds all tasks up to see how much memory is used
     do 
-        potmemused=$(($potmemused+$elem))
+        potmemused=$(("$potmemused"+"$elem"))
     done
     
-    local memleft=$(($mem-$potmemused)) #gesamt memory - summe aller tasks
+    local memleft=$(("$mem"-"$potmemused")) #gesamt memory - summe aller tasks
     echo "$memleft"
 }
 
@@ -212,10 +212,10 @@ do
             elif [ "$inp" = "mem" ] #nur zum testen
             then
                 echo "mem $mem"
-                memleee=$(memleft "$mem")#nur zum testen
+                memleee=$(memleft "$mem") 
                 echo "memLeft $memleee"
-                singleTaskMem=$(nextSmallerPot "$memleee")#nur zum testen
-                echo "Höchst mögliche single task size: $singleTaskMem"#nur zum testen
+                singleTaskMem=$(nextSmallerPot "$memleee") 
+                echo "max potmem: $singleTaskMem" 
             else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
                 echo "Command nicht erkannt - bitte erneut eingeben"
             fi
