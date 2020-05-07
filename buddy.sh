@@ -111,21 +111,21 @@ function checkIfPowerOfTwo() {
 # initCheck=true
 
 ###main###
-while [ true ]
+while true 
 do
     read -p "Speicher eingeben" memoryInput
     mem=$memoryInput
     if [[ "$memoryInput" =~ $num ]] && checkIfPowerOfTwo "$memoryInput" = true
     then 
 
-        while [ true ]
+        while true
         do 
             read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp
             #check1=true
             if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]
             then
             
-                while [ true ]
+                while true
                 do
                     read -p "Allocate Wert eingeben" allocateInput
                     if [[ "$allocateInput" =~ $re ]]
