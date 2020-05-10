@@ -19,12 +19,12 @@ function devAdd()  {
 
 
     res=$(($sumBuddy+$sumTask))
-    echo " "
+  
     echo "devAdd: $res"
 }
 
 
-mem=1024
+memory=1024
 
 re='[a-zA-Z]'
 num='[0-9]'
@@ -39,148 +39,160 @@ function buddytest() {
 
     local mem=$1    #1024
     local task=$2   #120
-    local a=$(("$mem"+1))
+    local sizeCheck=$(("$mem"+1))
     local i=0
+    local spaceLeftCheck=false
   
 
-    if [ "${#buddylist[@]}" -eq 0 ] #wenn die liste leer ist wird dieses verfahren benutzt
+    if [ "${#buddylist[@]}" -eq 0 ] && [ "${#tasklist[@]}" -eq 0 ] #wenn die liste leer ist wird dieses verfahren benutzt
     then
 
-
-        while [ "$task" -le "$mem" ] #-le da task in memory passen soll
-            
-            do  
-            mem=$(("$mem"/2))    #teilt solange bis passt
-            if [ "$mem" -ge "$task" ] #solange der task noch kleiner als gesammt mem ist wird jede halbierung als leerer buddy in die liste geschrieben
-            then
+        if [ "$task" -le "$mem" ]
+        then
+            while [ "$task" -le "$mem" ] #-le da task in memory passen soll
                 
-                buddylist+=("$mem") #leere buddys kommen in liste
-            fi       
-            done
-        
-        mem=$(("$mem"*2)) #dann ein mal verdoppeln
-        
-        tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
-        #echo "$mem"
-    else #sobald die erste allocation durchgeführt wurde, wird ab dann diese methode benutzt
-        echo "else case"
+                do  
+                mem=$(("$mem"/2))    #teilt solange bis passt
+                if [ "$mem" -ge "$task" ] #solange der task noch kleiner als gesammt mem ist wird jede halbierung als leerer buddy in die liste geschrieben
+                then
+                    
+                    buddylist+=("$mem") #leere buddys kommen in liste
+                fi       
+                done
+            
+            mem=$(("$mem"*2)) #dann ein mal verdoppeln
+            
+            tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
+            echo "Task $task erfolgreich allocated - benötigte $mem Speicher"
+        else
+            echo "Task $task ist zu groß, nicht genug speicher verfügbar $"
+        fi
+    elif [ "${#buddylist[@]}" -gt 0 ] #sobald die erste allocation durchgeführt wurde, wird ab dann diese methode benutzt
+    then
+        #echo "else case"
+        #FORLOOP
+       
+       
         for elem in ${buddylist[@]} #hier wird die buddyliste(mit leeren buddys) durchlaufen, und nach dem kleinst möglichen buddy gesucht in den der task passt,
             #indem zum einen geschaut wird ob ein buddy größer(gleich) dem angeforderten task ist UND ob ein buddy kleiner als der buddy vor ihm in der liste ist
             #DIE BUDDYS WERDEN NACHEINANDER DURCHLAUFEN UND ÜBERSCHREIBEN SICH SO LANGE BIS DER KLEINSTE BUDDY PASST (oder einer der kleinsten wenn es mehrere gibt (-le))
         do 
+            
             if [ "$elem" -ge "$task" ] && [ "$elem" -le "$sizeCheck" ] #task ist kleiner als elembuddy und elembuddy ist kleiner als der buddy vorher in der liste, ?sollte egal sein ob -le oder -lt?
             then   
                 sizeCheck=$elem #wird benutzt um zu prüfen, dass bei Durchlaufen durch Liste ein kleines und passender buddy nicht durch einen größeren passenden buddy überschrieben wird (man will den kleinst möglichen buddy finden der von der größe her passt)
                 
                 local half=$(("$elem"/2)) #wird halbiert, im nächsten if wird damit weiter gearbeitet
-                echo "half $half"
+                #echo "half $half"
                 
                 local indexForDelete=$i #element bei dem 
                 i=$(("$i"+1)) #i++ um index zu finden
+                
+                spaceLeftCheck=true #wenn mindestens ein passender buddy dabei ist, wird dieser boolean auf true gesetzt, wenn nicht bleibt er false und das programm gibt dem user in der else ganz unten zurück, dass nicht genug speicher vorhanden ist
+            
             fi
         done
-        if [ "$task" -gt "$half" ] #task ist größer als die hälfte des buddys, dh er passt in kein kleineres
-        then 
-            echo "task -gt half = task ist größer als die hälfte des buddys -> passt direkt rein"
-            tasklist+=("$sizeCheck")
-            #buddylist=( "${buddylist[@]/$elemFromForLoop}" )
-            echo "indexDelete $indexForDelete"
-            echo "removing ${buddylist[$indexForDelete]} from buddylist, gets allocated or splitted"
-            unset buddylist["$indexForDelete"]
-            local cloneList=("${buddylist[@]}")
-            buddylist=("${cloneList[@]}")
-            # echo "buddylist ${buddylist[@]}"
-            # echo "cloneList ${cloneList[@]}"
-            
-        
-        elif [ "$task" -le "$half" ] #30   64
+
+        if [ $spaceLeftCheck = true ] #wenn ein buddy groß genug für den task war, kann er zugewiesen werden 
         then
-            echo " "
-            echo "task $task"
-            echo "task -le half = task ist kleiner(gleich) als hälfte des buddys -> buddy muss noch einmal oder mehrmals halbiert werden"
-            echo "indexDelete $indexForDelete"
-            echo "removing ${buddylist[$indexForDelete]} from buddylist, gets allocated or splitted"
-            unset buddylist["$indexForDelete"]
-            local cloneList=("${buddylist[@]}")
-            buddylist=("${cloneList[@]}")
+            #echo "wtf"
+            if [ "$task" -gt "$half" ] #task ist größer als die hälfte des buddys, dh er passt in kein kleineres
+            then 
+                echo "task -gt half = task ist größer als die hälfte des buddys -> passt direkt rein"
+                tasklist+=("$sizeCheck") #der buddy wird in die TASKLISTE gesetzt, es wird sizecheck benutzt, da diese variable den passenden leeren buddy aus der for loop darüber hat
+                echo "Task $task mem $mem erfolgreich allocated - benötigte $sizeCheck Speicher"
+                
+                #buddylist=( "${buddylist[@]/$elemFromForLoop}" )
+                #echo "indexDelete $indexForDelete"
+                echo "removing ${buddylist[$indexForDelete]} from buddylist, gets allocated or splitted"
+                unset buddylist["$indexForDelete"] #es wird der buddy aus der buddylist gelöscht, da er 4 zeilen darüber als nun aktiver task in die tasklist gesetzt wurde
+                local cloneList=("${buddylist[@]}") #clon zeugs, bin noch nicht sicher ob man es noch braucht, hat davor bei unset "null" geschrieben statt zu löschen
+                buddylist=("${cloneList[@]}") #diese zeile + zeile darüber wahrscheinlich obsolete
+                
+                
             
-            while [ "$task" -le "$half" ]
-            do
-                echo "half $half"
-                buddylist+=("$half")
-                half=$(("$half"/2))
+            elif [ "$task" -le "$half" ] #task ist kleiner oder gleich der hälfte des buddys, also muss noch ein oder mehrmals halbiert werden, um den kleinst möglichen buddy zu finden in den der task passt
+            then
+               
                 
+                echo "task -le half = task ist kleiner(gleich) als hälfte des buddys -> buddy muss noch einmal oder mehrmals halbiert werden"
+                #echo "indexDelete $indexForDelete"
+                echo "removing ${buddylist[$indexForDelete]} from buddylist, gets allocated or splitted"
+                unset buddylist["$indexForDelete"] #der task wird aus der buddyliste gelöscht, da er nun benutzt wird
+                local cloneList=("${buddylist[@]}") #idk
+                buddylist=("${cloneList[@]}") #idk
                 
-                echo "half added to buddylist: $half"
-            done
-            # local lang="${#buddylist[@]}"
-            # lang=$(("$lang"-1))
-            #unset buddylist["$lang"]
-            #local cloneList=("${buddylist[@]}")
-            #buddylist=("${cloneList[@]}")
-            #echo "remove from buddylist: $half"
-            local doubleHalf=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden
-            tasklist+=("$doubleHalf")
-            echo "add to tasklist: $doubleHalf"
+                while [ "$task" -le "$half" ] #hier wird wieder so lange geteilt, bis der kleinst mögliche buddy gefunden wurde, jede Teilung wird als leerer Buddy in die buddyliste geschrieben
+                                                #wieder so lange bis der task größer als die halbierung ist (muss am ende verdoppelt werden, s. 10 Zeilen unten)
+                do
+                    #echo "half $half"
+                    buddylist+=("$half") #jede teilung kommt in buddylist
+                    half=$(("$half"/2)) #wird so lange geteilt bis passt
+                    
+                    
+                    #echo "half added to buddylist: $half"
+                done
+                # local lang="${#buddylist[@]}"
+                # lang=$(("$lang"-1))
+                #unset buddylist["$lang"]
+                #local cloneList=("${buddylist[@]}")
+                #buddylist=("${cloneList[@]}")
+                #echo "remove from buddylist: $half"
+                local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist - aber man braucht einen buddy der größer als der task ist, sodass der task rein passt
+                tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
+                echo "Task $task erfolgreich allocated - benötigte $memToAdd Speicher"
+                # echo "add to tasklist: $memToAdd"
 
-                
+            else
+                echo "SOLLTE NICHT VORKOMMEN"       
+            fi
+        else #else case zu spaceLeftCheck, wenn kein buddy mit genug platz mehr frei ist, bekommt der user die meldung, dass er nicht zugewiesen worden konnte
+            echo "Task $task ist zu groß - konnte nicht zugewiesen werden"
         fi
-        
-
+    else #wenn buddylist leer und taskliste voll
+        echo "Task $task konnte nicht zugewiesen werden - der komplette Speicher ist belegt"
     
     fi
 
 }
 
-function buddylistRemove() {
 
-    unset list["$ind"] #//noch nicht sicher ob funktioniert
-
-        echo "Task $taskindx deallocated"
-        listClone=("${list[@]}") #unset löscht array element nicht sondern ersetzt es durch null, deshalb wird array auf ein neues kopiert, sodass null werte raus fallen
-        list=("${listClone[@]}") #list wieder zurück kopieren, da mit list gearbeitet wird
-
-}
 
 #######################################
-task1=120
-task2=120
-task3=120
+inoo=1
 
-buddytest "$mem" "$task1"
-echo "buddylist: ${buddylist[@]}"
-echo "tasklist: ${tasklist[@]}"
-
-devAdd
-echo " "
-buddytest "$mem" "$task2"
-echo ""
-echo "buddylist: ${buddylist[@]}"
-echo "tasklist: ${tasklist[@]}"
+function testrun() {
 
 
-devAdd
-echo " "
-buddytest "$mem" "$task3"
-echo ""
-echo "buddylist: ${buddylist[@]}"
-echo "tasklist: ${tasklist[@]}"
+    local task=$1
+    echo $inoo
+    echo "TASK: $1"
+    buddytest "$memory" "$task"
+    echo " "
+    echo "Leere Buddys: ${buddylist[@]}"
+    echo "Aktive Buddys: ${tasklist[@]}"
+    devAdd
+    echo "-------------------------------------------"
+    
+    inoo=$(("$inoo"+1))
+}
 
-# echo "buddy1: ${buddylist[0]}"
-# echo "buddy2:${buddylist[1]}"
-# echo "buddy3:${buddylist[2]}"
-# echo "task1:${list[0]}"
-# echo "task2:${list[1]}"
-# echo "task3:${list[2]}"
+testrun 120
+testrun 513
+testrun 120
+testrun 30
+testrun 400
+testrun 33
+testrun 128
+testrun 16
+testrun 8
+testrun 100
+testrun 9
+testrun 2
+testrun 4
+testrun 2
+testrun 100
 
-devAdd
-
-echo " "
-buddytest "$mem" 510
-echo ""
-echo "buddylist: ${buddylist[@]}"
-echo "tasklist: ${tasklist[@]}"
-devAdd
 
 ######################################
 
