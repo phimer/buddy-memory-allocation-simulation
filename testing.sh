@@ -1,24 +1,25 @@
 #! /usr/bin/bash
 
+echo -e "################################################################################################################################################################"
 function devAdd()  {
     
     sumBuddy=0
     sumTask=0
 
 
-    for el in ${buddylist[@]}
+    for el in "${buddylist[@]}"
     do
-        sumBuddy=$(($sumBuddy+$el))
+        sumBuddy=$(("$sumBuddy"+"$el"))
     done
 
-    for elo in ${tasklist[@]}
+    for elo in "${tasklist[@]}"
     do
-        sumTask=$(($sumTask+$elo))
+        sumTask=$(("$sumTask"+"$elo"))
     done
 
 
 
-    res=$(($sumBuddy+$sumTask))
+    res=$(("$sumBuddy"+"$sumTask"))
   
     echo "devAdd: $res"
 }
@@ -35,7 +36,7 @@ buddylist=() #liste für leere buddys
 
 
 
-function buddytest() {
+function allocate() {
 
     local mem=$1    #1024
     local task=$2   #120
@@ -63,9 +64,9 @@ function buddytest() {
             mem=$(("$mem"*2)) #dann ein mal verdoppeln
             
             tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
-            echo "Task $task erfolgreich allocated - benötigte $mem Speicher"
+            echo -e "\e[32mTask $task erfolgreich allocated - benötigte $mem Speicher\e[0m"
         else
-            echo "Task $task ist zu groß, nicht genug speicher verfügbar $"
+            echo -e "e[31mTask $task ist zu groß, nicht genug speicher verfügbar\e[0m"
         fi
     elif [ "${#buddylist[@]}" -gt 0 ] #sobald die erste allocation durchgeführt wurde, wird ab dann diese methode benutzt
     then
@@ -73,7 +74,7 @@ function buddytest() {
         #FORLOOP
        
        
-        for elem in ${buddylist[@]} #hier wird die buddyliste(mit leeren buddys) durchlaufen, und nach dem kleinst möglichen buddy gesucht in den der task passt,
+        for elem in "${buddylist[@]}" #hier wird die buddyliste(mit leeren buddys) durchlaufen, und nach dem kleinst möglichen buddy gesucht in den der task passt,
             #indem zum einen geschaut wird ob ein buddy größer(gleich) dem angeforderten task ist UND ob ein buddy kleiner als der buddy vor ihm in der liste ist
             #DIE BUDDYS WERDEN NACHEINANDER DURCHLAUFEN UND ÜBERSCHREIBEN SICH SO LANGE BIS DER KLEINSTE BUDDY PASST (oder einer der kleinsten wenn es mehrere gibt (-le))
         do 
@@ -100,7 +101,7 @@ function buddytest() {
             then 
                 echo "task -gt half = task ist größer als die hälfte des buddys -> passt direkt rein"
                 tasklist+=("$sizeCheck") #der buddy wird in die TASKLISTE gesetzt, es wird sizecheck benutzt, da diese variable den passenden leeren buddy aus der for loop darüber hat
-                echo "Task $task mem $mem erfolgreich allocated - benötigte $sizeCheck Speicher"
+                echo -e "\e[32mTask $task erfolgreich allocated - benötigte $sizeCheck Speicher\e[0m"
                 
                 #buddylist=( "${buddylist[@]/$elemFromForLoop}" )
                 #echo "indexDelete $indexForDelete"
@@ -140,23 +141,51 @@ function buddytest() {
                 #echo "remove from buddylist: $half"
                 local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist - aber man braucht einen buddy der größer als der task ist, sodass der task rein passt
                 tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
-                echo "Task $task erfolgreich allocated - benötigte $memToAdd Speicher"
+                echo -e "\e[32mTask $task erfolgreich allocated - benötigte $memToAdd Speicher\e[0m"
                 # echo "add to tasklist: $memToAdd"
 
             else
                 echo "SOLLTE NICHT VORKOMMEN"       
             fi
         else #else case zu spaceLeftCheck, wenn kein buddy mit genug platz mehr frei ist, bekommt der user die meldung, dass er nicht zugewiesen worden konnte
-            echo "Task $task ist zu groß - konnte nicht zugewiesen werden"
+            echo -e "\e[31mTask $task ist zu groß - konnte nicht zugewiesen werden\e[0m"
         fi
     else #wenn buddylist leer und taskliste voll
-        echo "Task $task konnte nicht zugewiesen werden - der komplette Speicher ist belegt"
+        echo -e "\e[31mTask $task konnte nicht zugewiesen werden - der komplette Speicher ist belegt\e[0m"
     
     fi
 
 }
 
+function deallocate() {
+    
+    index=$1
+    tasklistLen="${#tasklist[@]}"
+    echo "tasklistLen $tasklistLen"
 
+    if [[ "$index" -gt "$tasklistLen" ]]
+    then
+        echo -e "\e[31mDieser Task existiert nicht\e[0m"
+
+    elif [[ "$index" -le 0 ]]   
+    then
+        echo -e "\e[31mNicht möglich - Tasks fangen bei 1 an\e[0m"
+
+    else
+
+        index=$(("$1"-1))
+        buddyThatHasToGoBackInBuddylist="${tasklist["$index"]}"
+        buddylist+=("$buddyThatHasToGoBackInBuddylist")
+
+        unset tasklist["$index"]
+        tempCloneList=("${tasklist[@]}")
+        tasklist=("${tempCloneList[@]}")
+    
+    fi
+
+    
+
+}
 
 #######################################
 inoo=1
@@ -167,32 +196,41 @@ function testrun() {
     local task=$1
     echo $inoo
     echo "TASK: $1"
-    buddytest "$memory" "$task"
+    allocate "$memory" "$task"
     echo " "
-    echo "Leere Buddys: ${buddylist[@]}"
-    echo "Aktive Buddys: ${tasklist[@]}"
+    echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+    echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"
     devAdd
-    echo "-------------------------------------------"
+    echo "-----------------------------------------------------------------------------------------------"
     
     inoo=$(("$inoo"+1))
 }
 
-testrun 120
-testrun 513
-testrun 120
-testrun 30
-testrun 400
-testrun 33
-testrun 128
-testrun 16
-testrun 8
-testrun 100
-testrun 9
-testrun 2
-testrun 4
-testrun 2
-testrun 100
+function testrunD() {
 
+    echo ""
+    local k=$1
+    echo "Task to deallocate: $k"
+    deallocate "$k"
+    echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+    echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"
+    echo "1 ${tasklist[0]}"
+    echo "2 ${tasklist[1]}"
+    echo "3 ${tasklist[2]}"
+    echo "4 ${tasklist[3]}"
+    devAdd
+
+}
+
+
+
+# testrun 120
+# testrun 513
+# testrun 120
+# testrun 30
+# testrun 400
+# testrun 125
+# testrunD 4
 
 ######################################
 
@@ -300,7 +338,7 @@ function addtobuddylist() {
 function memleft() {
     local mem=$1 
     local potmemused=0
-    for elem in ${list[@]}  #adds all tasks up to see how much memory is used
+    for elem in "${list[@]}"  #adds all tasks up to see how much memory is used
     do 
         potmemused=$(("$potmemused"+"$elem"))
     done
@@ -310,22 +348,22 @@ function memleft() {
 }
 
 
-# löscht tasks aus liste
-function deallocate() {
-    local taskindx=$1 #index des tasks den man beenden will
+# # löscht tasks aus liste
+# function deallocate() {
+#     local taskindx=$1 #index des tasks den man beenden will
 
-    if [ "$taskindx" -gt ${#list[@]} ] || [ "$taskindx" -lt 0 ] #checkt ob die eingegebene zahl überhaupt index der liste ist oder ob eingegebene zahl kleiner 0
-    then 
-        echo "Task $taskindx doesn't exist" #wenn task nicht teil der liste ist
-    else
-        local ind="$taskindx-1" #wenn task teil der liste ist wird er aus der liste gelöscht
-        unset list["$ind"] 
-        echo "Task $taskindx deallocated"
-        listClone=("${list[@]}") #unset löscht array element nicht sondern ersetzt es durch null, deshalb wird array auf ein neues kopiert, sodass null werte raus fallen
-        list=("${listClone[@]}") #list wieder zurück kopieren, da mit list gearbeitet wird
-    fi
+#     if [ "$taskindx" -gt ${#list[@]} ] || [ "$taskindx" -lt 0 ] #checkt ob die eingegebene zahl überhaupt index der liste ist oder ob eingegebene zahl kleiner 0
+#     then 
+#         echo "Task $taskindx doesn't exist" #wenn task nicht teil der liste ist
+#     else
+#         local ind="$taskindx-1" #wenn task teil der liste ist wird er aus der liste gelöscht
+#         unset list["$ind"] 
+#         echo "Task $taskindx deallocated"
+#         listClone=("${list[@]}") #unset löscht array element nicht sondern ersetzt es durch null, deshalb wird array auf ein neues kopiert, sodass null werte raus fallen
+#         list=("${listClone[@]}") #list wieder zurück kopieren, da mit list gearbeitet wird
+#     fi
     
-}
+# }
 
 # checkt ob Zweierpotenz, wichtig für erste user eingabe(eingabe muss zweierpotenz sein)
 function checkIfPowerOfTwo() {
@@ -349,109 +387,87 @@ function checkIfPowerOfTwo() {
 
 
 
-# while true
-# do 
-#     read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp #"hauptmenü", user kann hier task allocaten, deallocaten, alle aktiven tasks anzeigen oder programm verlassen
-#     #check1=true
-#     if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  # wenn user einen task starten will (allocate)
-#     then
+while true
+do 
+    read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp #"hauptmenü", user kann hier task allocaten, deallocaten, alle aktiven tasks anzeigen oder programm verlassen
+    #check1=true
+    if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  # wenn user einen task starten will (allocate)
+    then
     
-#         while true
-#         do
-#             read -p "Allocate Wert eingeben" allocateInput
-#             if [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -gt 0 ] #input muss zahl sein und größer 0
-#             then
+        while true
+        do
+            read -p "Allocate Wert eingeben" allocateInput
+            if [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -gt 0 ] #input muss zahl sein und größer 0
+            then
             
-#                 echo ""
-#                 memoryLeft=$(memleft "$mem") #wie viel memory ist left
+                echo " "
+             
+                allocate "$memory" "$allocateInput"
 
-#                 #echo "memoryLeft before allocate: $memoryLeft"#######testing
-#                 #echo "mem $mem"#####testing
-#                 #declare -i pot=$(nextSmallerPot "$memoryLeft")
-
-#                 allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
-#                 #echo "allocate check: $allocateCheck"####testing
-#                 if [ "$allocateCheck" = true ] #wenn genug platz für den task ist
-#                 then
-                    
-#                     temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
-#                     buddytest "$mem" "$allocateInput"
-#                     #echo "temp: $temp"####testing
-#                     list+=("$temp") #fügt potenzspeicher in liste ein
-#                     echo "Task ($allocateInput) allocated: Task used $temp memory"
-#                     memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus, eigentlich nur wichtig zum testen, kann wharscheinlich raus
-#                     #echo "Memory left: $memoryLeft"####testing
-#                     #echo "mem $mem"####testing
-#                     echo ""
-#                     #check1=false #man kommt eine while loop zurück###egal
-#                     break
-#                 else
-#                     echo "$allocateInput not allocated - not enough memory left"
-#                     echo ""
-#                     #check1=false
-#                     break
-#                 fi
+                
+                echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+                echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+                echo ""
+                break
 
                 
                 
             
-#             elif [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -le 0 ] #wenn eingabe zahl aber <= 0 bekommt user die meldung, dass es keinen sinn macht
-#             then
+            elif [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -le 0 ] #wenn eingabe zahl aber <= 0 bekommt user die meldung, dass es keinen sinn macht
+            then
                 
-#                 printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
-#                 echo ""
-#             else
-#                 printf "\nEingabewert muss eine Zahl sein\n" #wenn eingabe keine pure zahl ist 
-#                 echo " "
-#                 break
-#             fi
-#         done
-#     elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ] #wenn user alle aktiven tasks anzeigen lassen will
-#     then
-#         echo ""
-#         echo "Active tasks: ${list[@]}" #printed einfach liste aus (sind alle aktiven tasks)
-#         echo ""
-#         memleee=$(memleft "$mem") #info für user wie viel speicher noch übrig ist
-#         echo "Remaining Memory: $memleee"
-#         singleTaskMem=$(nextSmallerPot "$memleee") #info für user wie viel groß der größt mögliche task sein kann
-#         echo "Höchst mögliche single task size: $singleTaskMem"
-#         echo ""
-#     elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
-#     then
-#         read -p "Welchen Task deallocaten?" deallocInput
+                printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
+                echo ""
+                break
 
-#         if ! [[ $deallocInput =~ $num ]] #wenn task keine zahl ist 
-#         then
-#             echo " "
-#             echo "Eingabewert muss eine Zahl sein"
-#             echo " "
-#             #break
-#         else
-#             echo ""
-#             deallocate "$deallocInput" #diese funktion löscht den task aus der liste(wenn es diesen task gitb)(wird alles in function gecheckt)
-        
-#             echo "Remaining active tasks: ${list[@]}" #info für user welche tasks aktuell noch laufen
-#             memleee=$(memleft "$mem")
-#             echo "Remaining Memory: $memleee" #info für user wie viel gesamtspeicher noch frei ist
-#             echo ""
-#         fi
-#     elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
-#     then
-#         echo "Programm beendet"
-#         exit 1
-#     elif [ "$inp" = "mem" ] #nur zum testen
-#     then
-#         echo "mem $mem"
-#         memleee=$(memleft "$mem") 
-#         echo "memLeft $memleee"
-#         singleTaskMem=$(nextSmallerPot "$memleee") 
-#         echo "max potmem: $singleTaskMem" 
-#         echo "buddylist: ${buddylist[@]}"
-#     else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
-#         echo "Command nicht erkannt - bitte erneut eingeben"
-#     fi
-# done
-##################        
+            else
+                printf "\nEingabewert muss eine Zahl sein\n" #wenn eingabe keine pure zahl ist 
+                echo " "
+                break
+            fi
+        done
+    elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ] #wenn user alle aktiven tasks anzeigen lassen will
+    then
+
+        echo " "
+        echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+        echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+
+    elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
+    then
+        read -p "Welchen Task deallocaten?" deallocInput
+
+        if ! [[ $deallocInput =~ $num ]] #wenn task keine zahl ist 
+        then
+            echo " "
+            echo "Eingabewert muss eine Zahl sein"
+            echo " "
+            #break
+        else
+
+            echo " "
+            deallocate "$deallocInput"
+            echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+            echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+
+        fi
+    elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
+    then
+        echo "Programm beendet"
+        exit 1
+    elif [ "$inp" = "mem" ] #nur zum testen
+    then
+        echo "mem $mem"
+        memleee=$(memleft "$mem") 
+        echo "memLeft $memleee"
+        singleTaskMem=$(nextSmallerPot "$memleee") 
+        echo "max potmem: $singleTaskMem" 
+        echo "buddylist: ${buddylist[@]}"
+    else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
+        echo "Command nicht erkannt - bitte erneut eingeben"
+    fi
+done
+#################        
 #     else
 #         echo " "
 #         echo "Eingabe muss eine Zweierpotenz sein" #else clause zu erster eingabe, wenn eingabe keine zweierpotenz ist
