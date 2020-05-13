@@ -149,16 +149,41 @@ function allocate() {
                 
                 echo "task -le half = task ist kleiner(gleich) als hälfte des buddys -> buddy muss noch einmal oder mehrmals halbiert werden"
                 #echo "indexDelete $indexForDelete"
-                echo "removing ${buddylist[$indexForDelete]} from buddylist, gets allocated or splitted"
+
+                #buddy aus buddylist löschen, da er nun aufgeteilt wird
+                echo "removing ${buddylist[$indexForDelete]} from buddylist, wird gesplitted"
                 unset buddylist["$indexForDelete"] #der task wird aus der buddyliste gelöscht, da er nun benutzt wird
                 local cloneList=("${buddylist[@]}") #idk
                 buddylist=("${cloneList[@]}") #idk
+
+
+                #buddy ID aus buddyidlist löschen, da dieser task erstmal nicht mehr existiert
+                echo "removing ${buddyidlist[$indexForDelete]} from buddyidlist -  gibt es erstmal nicht mehr"
+                unset buddyidlist["$indexForDelete"]
+                local cloneIdList=("${buddyidlist[@]}") #idk
+                buddyidlist=("${cloneIdList[@]}") #idk
                 
                 while [ "$task" -le "$half" ] #hier wird wieder so lange geteilt, bis der kleinst mögliche buddy gefunden wurde, jede Teilung wird als leerer Buddy in die buddyliste geschrieben
                                                 #wieder so lange bis der task größer als die halbierung ist (muss am ende verdoppelt werden, s. 10 Zeilen unten)
                 do
-                    #echo "half $half"
+                    
+
+
                     buddylist+=("$half") #jede teilung kommt in buddylist
+                    buddyidlist+=("$idCount") #neuer buddy bekommt neue id durch hochzählen von idCount
+                    local saveIdForTaskIdList="$idCount"
+
+                    #dictionary weiter schreiben
+                    idCountMinusOne=$(("$idCount"-1))
+                    idAssign["$idCount"]="$idCountMinusOne" #buddys mit id 3 bekommen (3-1=2) als "vaterid" in dictionary geschrieben
+                    echo "dict key $idCount bekommt value $idCountMinusOne"
+                   
+                    idCount=$(("$idCount"+1)) #idCount hochzählen
+                    echo "idCount = $idCount"
+
+
+                    #echo "half $half"
+                    
                     half=$(("$half"/2)) #wird so lange geteilt bis passt
                     
                     
@@ -172,7 +197,10 @@ function allocate() {
                 #echo "remove from buddylist: $half"
                 local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist - aber man braucht einen buddy der größer als der task ist, sodass der task rein passt
                 tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
+                idCountMinusOne=$(("$idCount"-1))
+                taskidlist+=("$idCountMinusOne") 
                 echo -e "\e[32mTask $task erfolgreich allocated - benötigte $memToAdd Speicher\e[0m"
+                echo "$idCountPlusOne wurde in taskidlist geschrieben"
                 # echo "add to tasklist: $memToAdd"
 
             else
@@ -190,6 +218,12 @@ function allocate() {
 
 function deallocate() {
     
+
+
+    echo -e "\e[45mDEALLOC\e[0m"
+
+
+
     index=$1
     tasklistLen="${#tasklist[@]}"
     echo "tasklistLen $tasklistLen"
@@ -224,10 +258,10 @@ function deallocate() {
         mergeBuddys
         mergeBuddys
         mergeBuddys
-        # mergeBuddys
-        # mergeBuddys
-        # mergeBuddys
-        # mergeBuddys
+        mergeBuddys
+        mergeBuddys
+        mergeBuddys
+        mergeBuddys
         # mergeBuddys
         
     fi
@@ -276,18 +310,24 @@ function mergeBuddys() {
                 then
                     break
                 fi
-                echo -e "\e[32mmatch!\e[0m"
+                echo -e "\e[32mMATCH!\e[0m"
 
                 
                 echo "indx: $indx"
                 
                 local indxMinusOne=$(("$indx"-1))
-                local saveBuddyId="${buddyidlist["$indx"]}" #id saven für später
+                local saveBuddyId="${buddyidlist["$eleCount"]}" #id saven für später, kann entwerder eleCount oder elemCount saven, ist egal, sind gleich
                 echo "SAVEBUDDYID = $saveBuddyId"
-                
+               
                 #buddys addieren
-                local buddyOne=${buddylist["$indxMinusOne"]}
-                local buddyTwo=${buddylist["$indx"]}
+                echo -e "\e[45mBUDDYS ADDIEREN\e[0m"
+                printList
+                echo "eleCount $eleCount"
+                echo "elemCount $elemCount"
+              
+               
+                local buddyOne=${buddylist["$eleCount"]}
+                local buddyTwo=${buddylist["$elemCount"]}
                 
                 echo "buddyOne = $buddyOne"
                 echo "buddyTwo = $buddyTwo" 
@@ -296,19 +336,20 @@ function mergeBuddys() {
 
 
                 #buddy indices aus buddyidlist löschen
-                unset buddyidlist["$indx"] #index der gleichen tasks aus id liste löschen
-                unset buddyidlist["$indxMinusOne"] ##index der gleichen tasks aus id liste löschen
-                echo "index $indx und $indxMinusOne aus buddyidlist gelöscht"
+                unset buddyidlist["$eleCount"] #index der gleichen tasks aus id liste löschen
+                unset buddyidlist["$elemCount"] ##index der gleichen tasks aus id liste löschen
+                echo "index $eleCount und $elemCount aus buddyidlist gelöscht"
                 buddyIdCloneList=("${buddyidlist[@]}")
+                
                 buddyidlist=("${buddyIdCloneList[@]}")
 
                 #mergen der zwei gleichen buddys
                 #beide löschen
-                unset buddylist["$indx"]
-                unset buddylist["$indxMinusOne"]
+                unset buddylist["$eleCount"]
+                unset buddylist["$elemCount"]
                 taskIdCloneList=("${taskidlist[@]}")
                 taskidlist=("${taskIdCloneList[@]}")
-                echo "index $indx und $indxMinusOne aus taskidlist gelöscht"
+                echo "index $eleCount und $elemCount aus taskidlist gelöscht"
 
                 #mergedBuddy wieder in buddylist einfügen
                 buddylist+=("$mergedBuddy")
@@ -321,7 +362,7 @@ function mergeBuddys() {
                 echo "id aus dict wurde in buddyidlist geschrieben"
 
                 breakCheck=true #um loop zu beenden, wenn ein buddy zum mergen gefunden wurde
-                echo "breakCheck"
+                echo -e "\e[101mbreakcheck\e[0m"
                 break
 
             else
@@ -377,23 +418,24 @@ function testrunD() {
 }
 
 function printList() {
-
-    echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
-    echo -e "\e[46mBuddy ID list: ${buddyidlist[@]}\e[0m"
-    echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"
-    echo -e "\e[44mTask ID list: ${taskidlist[@]}\e[0m"
+    echo "---------"
+    echo -e "\e[36mbuddylists: ${buddylist[@]}\e[0m"
+    echo -e "\e[36mBuddy ID list: ${buddyidlist[@]}\e[0m"
+    echo -e "\e[33mtasklist: ${tasklist[@]}\e[0m"
+    echo -e "\e[33mTask ID list: ${taskidlist[@]}\e[0m"
     echo "idCount $idCount"
+    echo "---------"
 }
 
 
 testrun 120
-testrun 240
+testrun 4
 # testrun 120
 # testrun 30
 # testrun 400
 # testrun 125
-#testrunD 1
-#testrunD 1
+testrunD 1
+testrunD 1
 ######################################
 
 
