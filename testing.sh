@@ -32,6 +32,12 @@ num='[0-9]'
 
 tasklist=() #liste für aktive tasks (befüllte buddys)
 buddylist=() #liste für leere buddys
+taskidlist=()
+buddyidlist=()
+declare -A idAssign
+
+idCount=1
+
 ###functions###
 
 
@@ -58,6 +64,18 @@ function allocate() {
                 then
                     
                     buddylist+=("$mem") #leere buddys kommen in liste
+
+                    buddyidlist+=("$idCount") #jede Teilung, also jeder buddy, bekommt seine id in der buddyidlist
+                    
+                    #dictionary für spätere rückwärtszuweisung
+                    idCountMinusOne=$(("$idCount"-1))
+                    idAssign["$idCount"]="$idCountMinusOne"
+                    
+                    echo "idAssign ${idAssign[@]}"
+                    
+                    
+                    idCount=$(("$idCount"+1)) #idCount hochzählen
+
                 fi       
                 done
             
@@ -65,6 +83,8 @@ function allocate() {
             
             tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
             echo -e "\e[32mTask $task erfolgreich allocated - benötigte $mem Speicher\e[0m"
+            idCountMinusOne=$(("$idCount"-1))
+            taskidlist+=("$idCountMinusOne")
         else
             echo -e "e[31mTask $task ist zu groß, nicht genug speicher verfügbar\e[0m"
         fi
@@ -176,20 +196,94 @@ function deallocate() {
         index=$(("$1"-1))
         buddyThatHasToGoBackInBuddylist="${tasklist["$index"]}"
         buddylist+=("$buddyThatHasToGoBackInBuddylist")
-
+        buddyIDThatHasToGoBack=${taskidlist["$index"]}
+        buddyidlist+=("$buddyIDThatHasToGoBack")
+        echo "buddyID that goes back: $buddyIDThatHasToGoBack"
+        
         unset tasklist["$index"]
-        tempCloneList=("${tasklist[@]}")
-        tasklist=("${tempCloneList[@]}")
-    
+        taskCloneList=("${tasklist[@]}")
+        tasklist=("${taskCloneList[@]}")
+
+        unset taskidlist["$index"]
+        taskIdCloneList=("${taskidlist[@]}")
+        taskidlist=("${taskIdCloneList[@]}")
+        mergeBuddys
     fi
 
     
 
 }
 
-#######################################
-inoo=1
+function mergeBuddys() {
 
+    local save=0
+    local indx=0
+    buddyidlist+=(8) #testing
+    buddylist+=(32) #testing
+    for ele in "${buddyidlist[@]}"
+    do
+        for elem in "${buddyidlist[@]}"
+        do  
+            echo "ele $ele"
+            echo "elem $elem"
+            echo "save $save"
+        
+            if [ "$ele" -eq "$elem" ]
+            then
+
+
+                echo "elem = save"
+                echo "$elem = $save"
+                echo "indx: $indx"
+                
+                local indxMinusOne=$(("$indx"-1))
+                local saveBuddyId="${buddyidlist["$indx"]}"
+                
+                
+                #buddys addieren
+                local buddyOne=${buddylist["$indxMinusOne"]}
+                local buddyTwo=${buddylist["$indx"]}
+                
+                local mergedBuddy=$(("$buddyOne"+"$buddyTwo"))
+
+
+                #buddy indices aus buddyidlist löschen
+                unset buddyidlist["$indx"] #index der gleichen tasks aus id liste löschen
+                unset buddyidlist["$indxMinusOne"] ##index der gleichen tasks aus id liste löschen
+                echo "index $indx und $indxMinusOne aus buddyidlist gelöscht"
+                buddyIdCloneList=("${buddyidlist[@]}")
+                buddyidlist=("${buddyIdCloneList[@]}")
+
+                #mergen der zwei gleichen buddys
+                #beide löschen
+                unset buddylist["$indx"]
+                unset buddylist["$indxMinusOne"]
+                taskIdCloneList=("${taskidlist[@]}")
+                taskidlist=("${taskIdCloneList[@]}")
+                echo "index $indx und $indxMinusOne aus taskidlist gelöscht"
+
+                #mergedBuddy wieder in buddylist einfügen
+                buddylist+=("$mergedBuddy")
+
+                #id für neuen mergedBuddy in buddyidlist eintrage
+                echo "old id= $saveBuddyId"
+                echo "dict = ${idAssign["$saveBuddyId"]}"
+                buddyidlist+=("${idAssign["$saveBuddyId"]}")
+
+
+            fi
+        
+            save="$elem"
+            echo "indexxxx $indx"
+            indx=$(("$indx"+1))
+            echo "---"
+        done
+    done
+}
+
+#######################################
+
+inoo=1
 function testrun() {
 
 
@@ -199,7 +293,14 @@ function testrun() {
     allocate "$memory" "$task"
     echo " "
     echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+    echo -e "\e[46mBuddy ID list: ${buddyidlist[@]}\e[0m"
     echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"
+    echo -e "\e[43mTask ID list: ${taskidlist[@]}\e[0m"
+    for i in "${!idAssign[@]}"
+        do
+            echo "key  : $i"
+            echo "value: ${idAssign[$i]}"
+    done
     devAdd
     echo "-----------------------------------------------------------------------------------------------"
     
@@ -213,7 +314,9 @@ function testrunD() {
     echo "Task to deallocate: $k"
     deallocate "$k"
     echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+    echo -e "\e[46mBuddy ID list: ${buddyidlist[@]}\e[0m"
     echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"
+    echo -e "\e[43mTask ID list: ${taskidlist[@]}\e[0m"
     echo "1 ${tasklist[0]}"
     echo "2 ${tasklist[1]}"
     echo "3 ${tasklist[2]}"
@@ -224,14 +327,14 @@ function testrunD() {
 
 
 
-# testrun 120
-# testrun 513
+testrun 120
+#testrun 62
 # testrun 120
 # testrun 30
 # testrun 400
 # testrun 125
-# testrunD 4
-
+testrunD 1
+#testrunD 1
 ######################################
 
 
@@ -387,86 +490,86 @@ function checkIfPowerOfTwo() {
 
 
 
-while true
-do 
-    read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp #"hauptmenü", user kann hier task allocaten, deallocaten, alle aktiven tasks anzeigen oder programm verlassen
-    #check1=true
-    if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  # wenn user einen task starten will (allocate)
-    then
+# while true
+# do 
+#     read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp #"hauptmenü", user kann hier task allocaten, deallocaten, alle aktiven tasks anzeigen oder programm verlassen
+#     #check1=true
+#     if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  # wenn user einen task starten will (allocate)
+#     then
     
-        while true
-        do
-            read -p "Allocate Wert eingeben" allocateInput
-            if [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -gt 0 ] #input muss zahl sein und größer 0
-            then
+#         while true
+#         do
+#             read -p "Allocate Wert eingeben" allocateInput
+#             if [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -gt 0 ] #input muss zahl sein und größer 0
+#             then
             
-                echo " "
+#                 echo " "
              
-                allocate "$memory" "$allocateInput"
+#                 allocate "$memory" "$allocateInput"
 
                 
-                echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
-                echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
-                echo ""
-                break
+#                 echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+#                 echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+#                 echo ""
+#                 break
 
                 
                 
             
-            elif [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -le 0 ] #wenn eingabe zahl aber <= 0 bekommt user die meldung, dass es keinen sinn macht
-            then
+#             elif [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -le 0 ] #wenn eingabe zahl aber <= 0 bekommt user die meldung, dass es keinen sinn macht
+#             then
                 
-                printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
-                echo ""
-                break
+#                 printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
+#                 echo ""
+#                 break
 
-            else
-                printf "\nEingabewert muss eine Zahl sein\n" #wenn eingabe keine pure zahl ist 
-                echo " "
-                break
-            fi
-        done
-    elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ] #wenn user alle aktiven tasks anzeigen lassen will
-    then
+#             else
+#                 printf "\nEingabewert muss eine Zahl sein\n" #wenn eingabe keine pure zahl ist 
+#                 echo " "
+#                 break
+#             fi
+#         done
+#     elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ] #wenn user alle aktiven tasks anzeigen lassen will
+#     then
 
-        echo " "
-        echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
-        echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+#         echo " "
+#         echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+#         echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
 
-    elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
-    then
-        read -p "Welchen Task deallocaten?" deallocInput
+#     elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
+#     then
+#         read -p "Welchen Task deallocaten?" deallocInput
 
-        if ! [[ $deallocInput =~ $num ]] #wenn task keine zahl ist 
-        then
-            echo " "
-            echo "Eingabewert muss eine Zahl sein"
-            echo " "
-            #break
-        else
+#         if ! [[ $deallocInput =~ $num ]] #wenn task keine zahl ist 
+#         then
+#             echo " "
+#             echo "Eingabewert muss eine Zahl sein"
+#             echo " "
+#             #break
+#         else
 
-            echo " "
-            deallocate "$deallocInput"
-            echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
-            echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+#             echo " "
+#             deallocate "$deallocInput"
+#             echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+#             echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
 
-        fi
-    elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
-    then
-        echo "Programm beendet"
-        exit 1
-    elif [ "$inp" = "mem" ] #nur zum testen
-    then
-        echo "mem $mem"
-        memleee=$(memleft "$mem") 
-        echo "memLeft $memleee"
-        singleTaskMem=$(nextSmallerPot "$memleee") 
-        echo "max potmem: $singleTaskMem" 
-        echo "buddylist: ${buddylist[@]}"
-    else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
-        echo "Command nicht erkannt - bitte erneut eingeben"
-    fi
-done
+#         fi
+#     elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
+#     then
+#         echo "Programm beendet"
+#         exit 1
+#     elif [ "$inp" = "mem" ] #nur zum testen
+#     then
+#         echo "mem $mem"
+#         memleee=$(memleft "$mem") 
+#         echo "memLeft $memleee"
+#         singleTaskMem=$(nextSmallerPot "$memleee") 
+#         echo "max potmem: $singleTaskMem" 
+#         echo "buddylist: ${buddylist[@]}"
+#     else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
+#         echo "Command nicht erkannt - bitte erneut eingeben"
+#     fi
+# done
 #################        
 #     else
 #         echo " "
