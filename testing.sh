@@ -294,13 +294,7 @@ function mergeBuddys() {
         for elem in "${buddyidlist[@]}"
         do  
 
-            echo -e "\e[31meleCount $eleCount\e[0m"
-            
-            echo -e "\e[31melemCount $elemCount\e[0m"
-
-            echo "ele $ele"
-            echo "elem $elem"
-            
+           
         
             if [ "$ele" -eq "$elem" ] && [ "$eleCount" -ne "$elemCount" ] #wenn die ids sich gleichen, aber es nicht die selben in der liste sind
             then
@@ -340,40 +334,36 @@ function mergeBuddys() {
                 unset buddyidlist["$elemCount"] ##index der gleichen tasks aus id liste löschen
                 echo "index $eleCount und $elemCount aus buddyidlist gelöscht"
                 buddyIdCloneList=("${buddyidlist[@]}")
-                
                 buddyidlist=("${buddyIdCloneList[@]}")
 
                 #mergen der zwei gleichen buddys
                 #beide löschen
                 unset buddylist["$eleCount"]
                 unset buddylist["$elemCount"]
-                taskIdCloneList=("${taskidlist[@]}")
-                taskidlist=("${taskIdCloneList[@]}")
-                echo "index $eleCount und $elemCount aus taskidlist gelöscht"
+                buddyCloneList=("${buddylist[@]}")
+                buddylist=("${buddyCloneList[@]}")
+                echo "index $eleCount und $elemCount aus buddylist gelöscht"
 
                 #mergedBuddy wieder in buddylist einfügen
                 buddylist+=("$mergedBuddy")
                 echo "mergedBuddy $mergedBuddy wurde in buddylist geschrieben"
 
                 #id für neuen mergedBuddy in buddyidlist eintragen
-                echo "old id= $saveBuddyId"
-                echo "dict = ${idAssign["$saveBuddyId"]}"
-                buddyidlist+=("${idAssign["$saveBuddyId"]}")
+                echo "Buddys hatten old id = $saveBuddyId"
+                echo "Neuer merged buddy bekommt id aus dict = ${idAssign["$saveBuddyId"]}"
+                buddyidlist+=("${idAssign["$saveBuddyId"]}") #zugehörige id aus dict in idlist schreiben
                 echo "id aus dict wurde in buddyidlist geschrieben"
 
                 breakCheck=true #um loop zu beenden, wenn ein buddy zum mergen gefunden wurde
                 echo -e "\e[101mbreakcheck\e[0m"
                 break
 
-            else
-                echo -e "\e[33mno match\e[0m"
+            
                 
             fi
         
            
-            echo "indexxxx $indx"
-            printList #testing
-            echo "---"
+            
 
             indx=$(("$indx"+1)) #count up
             elemCount=$(("$elemCount"+1)) #count up elem loop
@@ -406,13 +396,10 @@ function testrunD() {
 
     echo ""
     local k=$1
-    echo "Task to deallocate: $k"
+    echo -e "\e[45mTask to deallocate: $k\e[0m"
     deallocate "$k"
     printList
-    echo "1 ${tasklist[0]}"
-    echo "2 ${tasklist[1]}"
-    echo "3 ${tasklist[2]}"
-    echo "4 ${tasklist[3]}"
+   
     devAdd
 
 }
