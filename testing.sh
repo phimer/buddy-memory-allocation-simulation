@@ -69,6 +69,7 @@ function allocate() {
                     
                     #dictionary für spätere rückwärtszuweisung
                     idCountMinusOne=$(("$idCount"-1))
+                    echo "idCountMinusOne = $idCountMinusOne"
                     idAssign["$idCount"]="$idCountMinusOne" #buddys mit id 3 bekommen (3-1=2) als "vaterid" in dictionary geschrieben
                     
                    
@@ -159,7 +160,9 @@ function allocate() {
 
                 #buddy ID aus buddyidlist löschen, da dieser task erstmal nicht mehr existiert
                 echo "removing ${buddyidlist[$indexForDelete]} from buddyidlist -  gibt es erstmal nicht mehr"
+                saveIndexOfDeletedTask="${buddyidlist[$indexForDelete]}" #wird in nächster while ins dictionary eingetragen
                 unset buddyidlist["$indexForDelete"]
+                echo "INDEXFORDELTE = $indexForDelete"
                 local cloneIdList=("${buddyidlist[@]}") #idk
                 buddyidlist=("${cloneIdList[@]}") #idk
                 
@@ -175,9 +178,12 @@ function allocate() {
 
                     #dictionary weiter schreiben
                     idCountMinusOne=$(("$idCount"-1))
-                    idAssign["$idCount"]="$idCountMinusOne" #buddys mit id 3 bekommen (3-1=2) als "vaterid" in dictionary geschrieben
-                    echo "dict key $idCount bekommt value $idCountMinusOne"
-                   
+
+##################################################################################################################################################################
+                    idAssign["$idCount"]="$idCountMinusOne" #//in dictionary: neuer buddy bekommt die vaterid des gerade gelöschten buddys
+##################################################################################################################################################################
+                    echo -e "\e[42mdict key $idCount bekommt value $idCountMinusOne\e[0m"
+
                     idCount=$(("$idCount"+1)) #idCount hochzählen
                     echo "idCount = $idCount"
 
@@ -416,21 +422,25 @@ function printList() {
 
 
 testrun 120
-testrun 4
-# testrun 120
+testrun 31
+# testrun 
+testrun 120
 # testrun 30
 # testrun 400
 # testrun 125
-testrunD 1
-testrunD 1
+#testrunD 3
+# testrunD 2
+# testrunD 1
+# testrunD 1
 ######################################
 
-
+##testing
 echo -e "\e[101mDictionary\e[0m"
 for i in "${!idAssign[@]}"
         do
             echo "key  : $i"
             echo "value: ${idAssign[$i]}"
+            echo ""
     done
 
 
