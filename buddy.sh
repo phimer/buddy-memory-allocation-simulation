@@ -1,105 +1,476 @@
 #! /usr/bin/bash
 
 
+function devAdd()  {
+    
+    sumBuddy=0
+    sumTask=0
 
-#mem=1024
+
+    for el in "${buddylist[@]}"
+    do
+        sumBuddy=$(("$sumBuddy"+"$el"))
+    done
+
+    for elo in "${tasklist[@]}"
+    do
+        sumTask=$(("$sumTask"+"$elo"))
+    done
+
+
+
+    res=$(("$sumBuddy"+"$sumTask"))
+  
+    echo "devAdd: $res"
+}
+
+
+#memory=1024
 
 re='[a-zA-Z]'
 num='[0-9]'
 
-list=() #liste für die tasks
+tasklist=() #liste für aktive tasks (befüllte buddys)
+buddylist=() #liste für leere buddys
+taskidlist=()
+buddyidlist=()
+declare -A idAssign
+
+idCount=1
 
 ###functions###
 
-#returns potenzmenge für die tasks
-function allocateCalc() {
-    
-    local mem=$1
-    local task=$2
-    
-    while [ "$task" -le "$mem" ] #-le da task in memory passen soll
-        
-        do  
-           mem=$(("$mem"/2))    #teilt solange bis passt
-           
+
+
+function allocate() {
+
+   
+
+
+    local mem=$1    #1024
+    local task=$2   #120
+    local sizeCheck=$(("$mem"+1))
+    local i=0
+    local spaceLeftCheck=false
+
+     echo -e "\e[42mALLOCATE Task $task\e[0m"
+  
+
+    if [ "${#buddylist[@]}" -eq 0 ] && [ "${#tasklist[@]}" -eq 0 ] #wenn die liste leer ist wird dieses verfahren benutzt
+    then
+
+        if [ "$task" -le "$mem" ]
+        then
+            while [ "$task" -le "$mem" ] #-le da task in memory passen soll
+                
+                do  
+                mem=$(("$mem"/2))    #teilt solange bis passt
+                if [ "$mem" -ge "$task" ] #solange der task noch kleiner als gesammt mem ist wird jede halbierung als leerer buddy in die liste geschrieben
+                then
+                    
+                    buddylist+=("$mem") #leere buddys kommen in liste
+
+                    buddyidlist+=("$idCount") #jede Teilung, also jeder buddy, bekommt seine id in der buddyidlist
+                    
+                    #dictionary für spätere rückwärtszuweisung
+                    idCountMinusOne=$(("$idCount"-1))
+                    #echo "idCountMinusOne = $idCountMinusOne"
+                    idAssign["$idCount"]="$idCountMinusOne" #buddys mit id 3 bekommen (3-1=2) als "vaterid" in dictionary geschrieben
+                    
+                   
+                    
+                    idCount=$(("$idCount"+1)) #idCount hochzählen
+                    #echo "idCount = $idCount"
+                fi       
+                done
+            
+            mem=$(("$mem"*2)) #dann ein mal verdoppeln
+            
+            tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
+            echo -e "\e[32mTask $task erfolgreich allocated - benötigte $mem Speicher\e[0m"
+            idCountMinusOne=$(("$idCount"-1))
+            taskidlist+=("$idCountMinusOne") #task bekommt id seines "buddys", da aber oben schon einmal hoch gezählt wurde, muss task jetzt count-1 bekommen
+        else
+            echo -e "e[31mTask $task ist zu groß, nicht genug speicher verfügbar\e[0m"
+        fi
+    elif [ "${#buddylist[@]}" -gt 0 ] #sobald die erste allocation durchgeführt wurde, wird ab dann diese methode benutzt
+    then
+        #echo "else case"
+        #FORLOOP
+       
+       
+        for elem in "${buddylist[@]}" #hier wird die buddyliste(mit leeren buddys) durchlaufen, und nach dem kleinst möglichen buddy gesucht in den der task passt,
+            #indem zum einen geschaut wird ob ein buddy größer(gleich) dem angeforderten task ist UND ob ein buddy kleiner als der buddy vor ihm in der liste ist
+            #DIE BUDDYS WERDEN NACHEINANDER DURCHLAUFEN UND ÜBERSCHREIBEN SICH SO LANGE BIS DER KLEINSTE BUDDY PASST (oder einer der kleinsten wenn es mehrere gibt (-le))
+        do 
+            
+            if [ "$elem" -ge "$task" ] && [ "$elem" -le "$sizeCheck" ] #task ist kleiner als elembuddy und elembuddy ist kleiner als der buddy vorher in der liste, ?sollte egal sein ob -le oder -lt?
+            then   
+                sizeCheck=$elem #wird benutzt um zu prüfen, dass bei Durchlaufen durch Liste ein kleines und passender buddy nicht durch einen größeren passenden buddy überschrieben wird (man will den kleinst möglichen buddy finden der von der größe her passt)
+                
+                local half=$(("$elem"/2)) #wird halbiert, im nächsten if wird damit weiter gearbeitet
+                #echo "half $half"
+                
+                local indexForDelete=$i #element bei dem 
+                
+                
+                spaceLeftCheck=true #wenn mindestens ein passender buddy dabei ist, wird dieser boolean auf true gesetzt, wenn nicht bleibt er false und das programm gibt dem user in der else ganz unten zurück, dass nicht genug speicher vorhanden ist
+                #echo "if triggered bei: $elem"
+            fi
+            i=$(("$i"+1)) #i++ um index zu finden
+            #echo "i $i"
+            #echo "indexForDelete $indexForDelete"
+            #echo "elem $elem"
         done
-    
-    mem=$(("$mem"*2)) #dann ein mal verdoppeln
-    echo "$mem"
-}
 
-#nächst kleinere Zweierpotenzmenge einer Zahl finden, benötigt für checkIfSpace()
-function nextSmallerPot() {
+        if [ $spaceLeftCheck = true ] #wenn ein buddy groß genug für den task war, kann er zugewiesen werden 
+        then
+            #echo "wtf"
+            if [ "$task" -gt "$half" ] #task ist größer als die hälfte des buddys, dh er passt in kein kleineres
+            then 
+                
+                tasklist+=("$sizeCheck") #der buddy wird in die TASKLISTE gesetzt, es wird sizecheck benutzt, da diese variable den passenden leeren buddy aus der for loop darüber hat
+                taskidlist+=("${buddyidlist["$indexForDelete"]}") #id aus buddyidlist in taskidlist "verschieben"
+                echo -e "\e[32mTask $task erfolgreich allocated - benötigte $sizeCheck Speicher\e[0m"
     
-    local memory=$1
-    local countUp=1
-    
-    while [[ $countUp -le $memory ]]
-    do  
-        countUp=$(("$countUp"*2))
-    done
-    countUp=$(("$countUp"/2))
-    
-    echo "$countUp"
-}
+                
+                #taskidlist+=("$idCount") #task bekommt id seines "buddys", da aber oben schon einmal hoch gezählt wurde, muss task jetzt count-1 bekommen
+                
+                #buddylist=( "${buddylist[@]/$elemFromForLoop}" )
+                #echo "indexDelete $indexForDelete"
+              
+
+                #task aus buddylist löschen, da er oben drüber in tasklist gesetzt wurde
+               
+                unset buddylist["$indexForDelete"] #es wird der buddy aus der buddylist gelöscht, da er 4 zeilen darüber als nun aktiver task in die tasklist gesetzt wurde
+                local cloneList=("${buddylist[@]}") #clon zeugs, bin noch nicht sicher ob man es noch braucht, hat davor bei unset "null" geschrieben statt zu löschen
+                buddylist=("${cloneList[@]}") #diese zeile + zeile darüber wahrscheinlich obsolete
+                
+                #id aus buddyidlist löschen, das er oben drüber in taskidlist gesetzt wurde
+                
+                unset buddyidlist["$indexForDelete"] #id wird aus der buddyIDlist gelöscht, da die id nun in taskidlist ist
+                local cloneIdList=("${buddyidlist[@]}") #clone
+                buddyidlist=("${cloneIdList[@]}") 
+                
+            
+            elif [ "$task" -le "$half" ] #task ist kleiner oder gleich der hälfte des buddys, also muss noch ein oder mehrmals halbiert werden, um den kleinst möglichen buddy zu finden in den der task passt
+            then
+               
+                #echo "half $half"
+                
+                #echo "indexForDelete $indexForDelete"
+
+                #buddy aus buddylist löschen, da er nun aufgeteilt wird
+                
+                unset buddylist["$indexForDelete"] #der task wird aus der buddyliste gelöscht, da er nun benutzt wird
+                local cloneList=("${buddylist[@]}") #idk
+                buddylist=("${cloneList[@]}") #idk
 
 
+                #buddy ID aus buddyidlist löschen, da dieser task erstmal nicht mehr existiert
+               
+                
+                local saveIndexOfDeletedBuddy="${buddyidlist[$indexForDelete]}" #id saven, da sie vielleicht wieder ins dictionary als parent id geschrieben wird
+                
+                unset buddyidlist["$indexForDelete"]
+               
+                local cloneIdList=("${buddyidlist[@]}") #idk
+                buddyidlist=("${cloneIdList[@]}") #idk
+                
+                loopCount=0 #um mit zu zählen wie oft die loop läuft
 
-#checks ob genug pot memory übrig ist um task auszuführen (nimmt nächst kleinere zweirpotenz von restlichem verfügbaren speicher, und checkt ob der task <= ist)
-function checkIfSpace() {   #task, memleft
-    
-    local task=$1
-    local memory=$2
-    local calcMem=0
-    calcMem=$(nextSmallerPot "$memory")
-    
+                local doubleHalf=$(("$half"/2)) #wenn buddy für den task nur noch einmal geteilt werden muss (also größer als die hälfte der aktuellen hälfte ist), dann wird etwas anderes ins dictionary geschrieben, deshlab hier der check
+                local halfCheck=false
+                if [ "$task" -gt "$doubleHalf" ]
+                then 
+                    halfCheck=true
 
-    if [ "$calcMem" -ge "$task" ]
-    then 
-        local check=true
-    else
-        local check=false
+                fi
+
+                while [ "$task" -le "$half" ] #hier wird wieder so lange geteilt, bis der kleinst mögliche buddy gefunden wurde, jede Teilung wird als leerer Buddy in die buddyliste geschrieben
+                                                #wieder so lange bis der task größer als die halbierung ist (muss am ende verdoppelt werden, s. 10 Zeilen unten)
+                do
+                    
+                    
+
+
+                    buddylist+=("$half") #jede teilung kommt in buddylist
+                    buddyidlist+=("$idCount") #neuer buddy bekommt neue id durch hochzählen von idCount
+                    local saveIdForTaskIdList="$idCount"
+
+                    #dictionary weiter schreiben
+                    idCountMinusOne=$(("$idCount"-1))
+
+##################################################################################################################################################################
+
+
+                    #"$halfCheck" = true 
+                    if [ "$loopCount" -eq 0 ] #dev#dieser fall tritt immer erstmal ein, muss hinbekommen, dass er nur eintritt wenn es auch wirklich nur einmal passiert
+                    then
+                    
+                    idAssign["$idCount"]="$saveIndexOfDeletedBuddy" #wenn loopcount 0 ist, heißt das, dass nur einmal geteilt werden musste, also bekommt der geteilte buddy die parent id des tasks davor ins dictionary geschrieben
+                    
+            
+                    else
+    
+                    idAssign["$idCount"]="$idCountMinusOne" #wenn loopcount > 0, heißt das, es musste mehr als einmal geteilt werden, also bekommt
+                  
+
+                    fi
+##################################################################################################################################################################
+                    
+
+                    idCount=$(("$idCount"+1)) #idCount hochzählen
+                    #echo "idCount = $idCount"
+
+
+                    #echo "half $half"
+                    
+                    half=$(("$half"/2)) #wird so lange geteilt bis passt
+                    #echo "half after half $half"
+
+                    loopCount=$(("$loopCount"+1))
+                    
+                    #echo "half added to buddylist: $half"
+                done
+                # local lang="${#buddylist[@]}"
+                # lang=$(("$lang"-1))
+                #unset buddylist["$lang"]
+                #local cloneList=("${buddylist[@]}")
+                #buddylist=("${cloneList[@]}")
+                #echo "remove from buddylist: $half"
+                local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist - aber man braucht einen buddy der größer als der task ist, sodass der task rein passt
+                tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
+                idCountMinusOne=$(("$idCount"-1))
+                taskidlist+=("$idCountMinusOne") 
+                echo -e "\e[32mTask $task erfolgreich allocated - benötigte $memToAdd Speicher\e[0m"
+            
+                # echo "add to tasklist: $memToAdd"
+
+            else
+                echo -e "\e[31mSOLLTE NICHT VORKOMMEN\e[0m"       
+            fi
+        else #else case zu spaceLeftCheck, wenn kein buddy mit genug platz mehr frei ist, bekommt der user die meldung, dass er nicht zugewiesen worden konnte
+            echo -e "\e[31mTask $task ist zu groß - konnte nicht zugewiesen werden\e[0m"
+        fi
+    else #wenn buddylist leer und taskliste voll
+        echo -e "\e[31mTask $task konnte nicht zugewiesen werden - der komplette Speicher ist belegt\e[0m"
+    
     fi
-    echo "$check"        
-}
-
-function allocate() { 
-    list+=("$1")
 
 }
 
-
-# checks wie viel speicher noch übrig ist (rechnet max speicher(der vom user am anfang eingegeben) - summe aller werte(tasks) in der liste)
-function memleft() {
-    local mem=$1 
-    local potmemused=0
-    for elem in ${list[@]}  #adds all tasks up to see how much memory is used
-    do 
-        potmemused=$(("$potmemused"+"$elem"))
-    done
-    
-    local memleft=$(("$mem"-"$potmemused")) #gesamt memory - summe aller tasks
-    echo "$memleft"
-}
-
-
-# löscht tasks aus liste
 function deallocate() {
-    local taskindx=$1 #index des tasks den man beenden will
-
-    if [ "$taskindx" -gt ${#list[@]} ] || [ "$taskindx" -lt 0 ] #checkt ob die eingegebene zahl überhaupt index der liste ist oder ob eingegebene zahl kleiner 0
-    then 
-        echo "Task $taskindx doesn't exist" #wenn task nicht teil der liste ist
-    else
-        local ind="$taskindx-1" #wenn task teil der liste ist wird er aus der liste gelöscht
-        unset list["$ind"] #//noch nicht sicher ob funktioniert
-
-        echo "Task $taskindx deallocated"
-        listClone=("${list[@]}") #unset löscht array element nicht sondern ersetzt es durch null, deshalb wird array auf ein neues kopiert, sodass null werte raus fallen
-        list=("${listClone[@]}") #list wieder zurück kopieren, da mit list gearbeitet wird
-    fi
     
+
+
+    echo -e "\e[41mDEALLOCATE\e[0m"
+
+
+
+    index=$1
+    tasklistLen="${#tasklist[@]}"
+    
+
+    if [[ "$index" -gt "$tasklistLen" ]]
+    then
+        echo -e "\e[31mDieser Task existiert nicht\e[0m"
+
+    elif [[ "$index" -le 0 ]]   
+    then
+        echo -e "\e[31mNicht möglich - Tasks fangen bei 1 an\e[0m"
+
+    else
+
+        index=$(("$1"-1))
+        buddyThatHasToGoBackInBuddylist="${tasklist["$index"]}"
+        buddylist+=("$buddyThatHasToGoBackInBuddylist")
+        buddyIDThatHasToGoBack=${taskidlist["$index"]}
+        buddyidlist+=("$buddyIDThatHasToGoBack")
+
+        
+        unset tasklist["$index"]
+        taskCloneList=("${tasklist[@]}")
+        tasklist=("${taskCloneList[@]}")
+
+        unset taskidlist["$index"]
+        taskIdCloneList=("${taskidlist[@]}")
+        taskidlist=("${taskIdCloneList[@]}")
+     
+
+        
+        local mergeLength=${#buddylist[@]} #wie viele tasks sind in buddylist = wie viel buddys könnten gemerged werden
+        
+        local printIndex=$(("$index"+1))
+        echo -e "\e[32mTask $printIndex deallocated\e[0m"
+        for (( c=1; c<="$mergeLength"; c++ )) #so oft merge function callen wie buddys in der liste sind, weniger reicht wahrscheinlich
+        do
+            mergeBuddys
+            
+        done
+       
+
+        #dictionary zurücksetzen, wenn keine tasks mehr laufen
+        mergeLengthBuddy=${#buddylist[@]}
+        mergeLengthTask=${#tasklist[@]}
+
+        if [ "$mergeLengthBuddy" -eq 1 ] && [ "$mergeLengthTask" -eq 0 ]
+        then
+            echo -e "\e[41mCLEARING DICTIONARY\e[0m"
+            unset idAssign[@] #dictionary löschen
+            idCount=1 #idcount zurücksetzen
+        fi
+        
+    fi
+
+    
+
 }
+
+function mergeBuddys() {
+
+    printList
+    echo -e "\e[45mMERGING...\e[0m"
+    
+
+    local breakCheck=false #um loops zu brechen
+    local indx=0 #index der ids in buddyidlist, hiermit wird der "richtige" buddy gelöscht/bearbeitet
+    local eleCount=0 #count der äußeren loop
+    local elemCount=0 #count für die innere loop
+   
+    for ele in "${buddyidlist[@]}"
+    do
+
+        if [ "$breakCheck" = true ] #um loop zu beenden, wenn ein buddy zum mergen gefunden wurde
+        then
+            break
+        fi
+
+        indx=0 #muss bei jeder neuen ele loop wieder auf 0
+        elemCount=0
+        
+        for elem in "${buddyidlist[@]}"
+        do  
+
+           
+        
+            if [ "$ele" -eq "$elem" ] && [ "$eleCount" -ne "$elemCount" ] #wenn die ids sich gleichen, aber es nicht die selben in der liste sind
+            then
+
+
+                if [ "$breakCheck" = true ] #um loop zu beenden, wenn ein buddy zum mergen gefunden wurde
+                then
+                    break
+                fi
+                #echo -e "\e[32mMATCH!\e[0m"
+
+                
+                
+                
+                local indxMinusOne=$(("$indx"-1))
+                local saveBuddyId="${buddyidlist["$eleCount"]}" #id saven für später, kann entwerder eleCount oder elemCount saven, ist egal, sind gleich
+              
+               
+                #buddys addieren
+                
+                
+                
+              
+               
+                local buddyOne=${buddylist["$eleCount"]}
+                local buddyTwo=${buddylist["$elemCount"]}
+                
+           
+
+                local mergedBuddy=$(("$buddyOne"+"$buddyTwo")) #muss man hier schon rechnen, da später gelöscht
+
+
+                #buddy indices aus buddyidlist löschen
+                unset buddyidlist["$eleCount"] #index der gleichen tasks aus id liste löschen
+                unset buddyidlist["$elemCount"] ##index der gleichen tasks aus id liste löschen
+              
+                buddyIdCloneList=("${buddyidlist[@]}")
+                buddyidlist=("${buddyIdCloneList[@]}")
+
+                #mergen der zwei gleichen buddys
+                #beide löschen
+                unset buddylist["$eleCount"]
+                unset buddylist["$elemCount"]
+                buddyCloneList=("${buddylist[@]}")
+                buddylist=("${buddyCloneList[@]}")
+               
+                #mergedBuddy wieder in buddylist einfügen
+                buddylist+=("$mergedBuddy")
+             
+                #id für neuen mergedBuddy in buddyidlist eintragen
+                buddyidlist+=("${idAssign["$saveBuddyId"]}") #zugehörige id aus dict in idlist schreiben
+             
+
+                breakCheck=true #um loop zu beenden, wenn ein buddy zum mergen gefunden wurde
+              
+                break
+
+            
+                
+            fi
+        
+           
+            
+
+            indx=$(("$indx"+1)) #count up
+            elemCount=$(("$elemCount"+1)) #count up elem loop
+            
+        done
+        eleCount=$(("$eleCount"+1)) #count up ele loop
+    done
+}
+
+#######################################
+
+inoo=1
+function testrun() {
+
+
+    local task=$1
+    echo $inoo
+    echo "TASK: $1"
+    allocate "$memory" "$task"
+    echo " "
+    printList
+    
+    devAdd
+    echo "-----------------------------------------------------------------------------------------------"
+    
+    inoo=$(("$inoo"+1))
+}
+
+function testrunD() {
+
+    echo ""
+    local k=$1
+    echo -e "\e[45mTask to deallocate: $k\e[0m"
+    deallocate "$k"
+    printList
+   
+    devAdd
+
+}
+
+function printList() {
+    echo "---------"
+    echo -e "\e[36mbuddylists: ${buddylist[@]}\e[0m"
+    echo -e "\e[36mBuddy ID list: ${buddyidlist[@]}\e[0m"
+    echo -e "\e[33mtasklist: ${tasklist[@]}\e[0m"
+    echo -e "\e[33mTask ID list: ${taskidlist[@]}\e[0m"
+    echo "idCount $idCount"
+    echo "---------"
+}
+
+
+
+
+
+
 
 # checkt ob Zweierpotenz, wichtig für erste user eingabe(eingabe muss zweierpotenz sein)
 function checkIfPowerOfTwo() {
@@ -119,110 +490,109 @@ do
     mem=$memoryInput #mem bleibt immer dieser eingegeben original wert, wird zum rechnen benutzt
     if [[ "$memoryInput" =~ $num ]] && checkIfPowerOfTwo "$memoryInput" = true #user input muss zahl sein und muss zweierpotenz sein
     then 
+# ################
 
-        while true
-        do 
-            read -p "Task (a)llocaten, Task (d)eallocate, alle (T)asks anzeigen oder (e)xit" inp #"hauptmenü", user kann hier task allocaten, deallocaten, alle aktiven tasks anzeigen oder programm verlassen
-            #check1=true
-            if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  # wenn user einen task starten will (allocate)
-            then
-            
-                while true
-                do
-                    read -p "Allocate Wert eingeben" allocateInput
-                    if [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -gt 0 ] #input muss zahl sein und größer 0
-                    then
-                    
-                        echo ""
-                        memoryLeft=$(memleft "$mem") #wie viel memory ist left
 
-                        #echo "memoryLeft before allocate: $memoryLeft"#######testing
-                        #echo "mem $mem"#####testing
-                        #declare -i pot=$(nextSmallerPot "$memoryLeft")
 
-                        allocateCheck=$(checkIfSpace "$allocateInput" "$memoryLeft") #ist genug memory left für den task(allocateInput)
-                        #echo "allocate check: $allocateCheck"####testing
-                        if [ "$allocateCheck" = true ] #wenn genug platz für den task ist
-                        then
-                            
-                            temp=$(allocateCalc "$mem" "$allocateInput") #rechnet wie viel "potenzspeicher" für den task benötigt wird
-                            #echo "temp: $temp"####testing
-                            list+=("$temp") #fügt potenzspeicher in liste ein
-                            echo "Task ($allocateInput) allocated: Task used $temp memory"
-                            memoryLeft=$(memleft "$mem") #rechnet memory left, nachdem task in liste eingetragen wurde, aus, eigentlich nur wichtig zum testen, kann wharscheinlich raus
-                            #echo "Memory left: $memoryLeft"####testing
-                            #echo "mem $mem"####testing
-                            echo ""
-                            #check1=false #man kommt eine while loop zurück###egal
-                            break
-                        else
-                            echo "$allocateInput not allocated - not enough memory left"
-                            echo ""
-                            #check1=false
-                            break
-                        fi
-
-                        
-                        
-                    
-                    elif [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -le 0 ] #wenn eingabe zahl aber <= 0 bekommt user die meldung, dass es keinen sinn macht
-                    then
-                        
-                        printf "\nKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\n"
-                        echo ""
-                    else
-                        printf "\nEingabewert muss eine Zahl sein\n" #wenn eingabe keine pure zahl ist 
-                        echo " "
-                        break
-                    fi
-                done
-            elif [ "$inp" = "t" ] || [ "$inp" = "show tasks" ] || [ "$inp" = "tasks" ] #wenn user alle aktiven tasks anzeigen lassen will
-            then
-                echo ""
-                echo "Active tasks: ${list[@]}" #printed einfach liste aus (sind alle aktiven tasks)
-                echo ""
-                memleee=$(memleft "$mem") #info für user wie viel speicher noch übrig ist
-                echo "Remaining Memory: $memleee"
-                singleTaskMem=$(nextSmallerPot "$memleee") #info für user wie viel groß der größt mögliche task sein kann
-                echo "Höchst mögliche single task size: $singleTaskMem"
-                echo ""
-            elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
-            then
-                read -p "Welchen Task deallocaten?" deallocInput
-
-                if ! [[ $deallocInput =~ $num ]] #wenn task keine zahl ist 
+    while true
+    do 
+        read -p "Task (a)llocaten, Task (d)eallocate, (I)nformationen anzeigen, (Z)uweisungstabelle anzeigen oder (e)xit" inp #"hauptmenü", user kann hier task allocaten, deallocaten, alle aktiven tasks anzeigen oder programm verlassen
+        #check1=true
+        if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  # wenn user einen task starten will (allocate)
+        then
+        
+            while true
+            do
+                read -p "Allocate Wert eingeben" allocateInput
+                if [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -gt 0 ] #input muss zahl sein und größer 0
                 then
+                
                     echo " "
-                    echo "Eingabewert muss eine Zahl sein"
-                    echo " "
-                    #break
+                
+                    allocate "$mem" "$allocateInput"
+
+                    
+                    echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+                    echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+                    echo ""
+                    break
+
+                    
+                    
+                
+                elif [[ "$allocateInput" =~ $num ]] && [ "$allocateInput" -le 0 ] #wenn eingabe zahl aber <= 0 bekommt user die meldung, dass es keinen sinn macht
+                then
+                    
+                    echo ""
+                    echo -e "\e[31mKann keinen Task kleiner/gleich 0 allocaten (macht keinen sinn)\e[0m"
+                    echo ""
+                    break
+
                 else
                     echo ""
-                    deallocate "$deallocInput" #diese funktion löscht den task aus der liste(wenn es diesen task gitb)(wird alles in function gecheckt)
-                
-                    echo "Remaining active tasks: ${list[@]}" #info für user welche tasks aktuell noch laufen
-                    memleee=$(memleft "$mem")
-                    echo "Remaining Memory: $memleee" #info für user wie viel gesamtspeicher noch frei ist
-                    echo ""
+                    echo -e "\e[31mEingabewert muss eine Zahl sein\e[0m" #wenn eingabe keine pure zahl ist 
+                    echo " "
+                    break
                 fi
-            elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
+            done
+        elif [ "$inp" = "i" ] || [ "$inp" = "I" ] || [ "$inp" = "info" ] #wenn user alle aktiven tasks anzeigen lassen will
+        then
+
+            echo " "
+            echo -e "\e[34mbuddy list: ${buddylist[@]}\e[0m"
+            echo -e "\e[34mbuddy ID list: ${buddyidlist[@]}\e[0m"
+            echo -e "\e[33mtask list: ${tasklist[@]}\e[0m"   
+            echo -e "\e[33mtask ID list: ${taskidlist[@]}\e[0m"   
+
+        elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
+        then
+            read -p "Welchen Task deallocaten?" deallocInput
+
+            if ! [[ $deallocInput =~ $num ]] #wenn task keine zahl ist 
             then
-                echo "Programm beendet"
-                exit 1
-            elif [ "$inp" = "mem" ] #nur zum testen
-            then
-                echo "mem $mem"
-                memleee=$(memleft "$mem") 
-                echo "memLeft $memleee"
-                singleTaskMem=$(nextSmallerPot "$memleee") 
-                echo "max potmem: $singleTaskMem" 
-            else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
-                echo "Command nicht erkannt - bitte erneut eingeben"
+                echo " "
+                echo "Eingabewert muss eine Zahl sein"
+                echo " "
+                #break
+            else
+
+                echo " "
+                deallocate "$deallocInput"
+                echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+                echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
+
             fi
-        done
+        elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
+        then
+            echo "Programm beendet"
+            exit 1
+        elif [ "$inp" = "mem" ] #nur zum testen
+        then
+            echo "mem $mem"
+            memleee=$(memleft "$mem") 
+            echo "memLeft $memleee"
+            singleTaskMem=$(nextSmallerPot "$memleee") 
+            echo "max potmem: $singleTaskMem" 
+            echo "buddylist: ${buddylist[@]}"
+
+        elif [ "$inp" = "dict" ] || [ "$inp" = "z" ] || [ "$inp" = "Z" ]
+        then
+            echo -e "\e[45mDictionary\e[0m"
+            for i in "${!idAssign[@]}"
+            do
+                echo "Buddy-ID:  $i"
+                echo "Parent-ID: ${idAssign[$i]}"
+                echo ""
+            done
+
+        else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
+            echo "Command nicht erkannt - bitte erneut eingeben"
+        fi
+    done
+################        
     else
         echo " "
-        echo "Eingabe muss eine Zweierpotenz sein" #else clause zu erster eingabe, wenn eingabe keine zweierpotenz ist
+        echo -e "\e[31mEingabe muss eine Zweierpotenz sein\e[0m" #else clause zu erster eingabe, wenn eingabe keine zweierpotenz ist
         echo " "
     fi
 done
