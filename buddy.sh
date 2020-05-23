@@ -1,5 +1,5 @@
 #! /usr/bin/bash
-
+#MASTER#
 ##################
 #######fixen
 #WENN MAN 1 ALLOCATED BEKOMMT DER BUDDY DIE GRÖßE 0
