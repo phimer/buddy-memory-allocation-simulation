@@ -1,6 +1,9 @@
 #! /usr/bin/bash
 
-
+##################
+#######fixen
+#WENN MAN 1 ALLOCATED BEKOMMT DER BUDDY DIE GRÖßE 0
+#####################
 
 
 
@@ -152,7 +155,7 @@ function allocate() {
                 local half=$(("$elem"/2)) #buddy wird halbiert, im nächsten if wird damit weiter gearbeitet
                 #echo "half $half"
                 
-                local indexForDelete=$i #element bei dem 
+                local indexForDelete=$i #index des elembuddys aufheben
                 
                 
                 spaceLeftCheck=true #wenn mindestens ein passender buddy dabei ist, wird dieser boolean auf true gesetzt, wenn nicht bleibt er false und das programm gibt dem user in der else ganz unten zurück, dass nicht genug speicher vorhanden ist
@@ -164,14 +167,21 @@ function allocate() {
             #echo "elem $elem"
         done
 
-        if [ $spaceLeftCheck = true ] #wenn ein buddy groß genug für den task war, kann er zugewiesen werden 
+
+        
+
+        if [ $spaceLeftCheck = true ] #wenn ein buddy groß genug für den task war, kann er zugewiesen werden, dh es wurde eine möglichkeit gefunden den task in die verfügbaren buddys zu allocaten
+
         then
-            #echo "wtf"
-            if [ "$task" -gt "$half" ] #task ist größer als die hälfte des buddys, dh er passt in kein kleineres
+
+
+            # diese if else ist der letzte große teil der allocate function. Es gibt den Fall, dass der Task direkt in den kleinst möglichen buddy passt (30 in 32), und den anderen Fall, dass der kleinst mögliche buddy noch ein oder mehrmals geteilt werden muss (11 in 32)
+
+            if [ "$task" -gt "$half" ] #task ist größer als die halbierung des buddys, dh er passt direkt in diesen buddy, und man muss den buddy nicht weiter halbieren
             then 
                 
                 tasklist+=("$sizeCheck") #der buddy wird in die TASKLISTE gesetzt, es wird sizecheck benutzt, da diese variable den passenden leeren buddy aus der for loop darüber hat
-                taskidlist+=("${buddyidlist["$indexForDelete"]}") #id aus buddyidlist in taskidlist "verschieben"
+                taskidlist+=("${buddyidlist["$indexForDelete"]}") #entsprechende id aus buddyidlist in taskidlist kopieren, indexForDelete wurde in der loop darüber gespeichert, ist also der index des passenden buddys
                 echo -e "\e[32mTask $task erfolgreich allocated - benötigte $sizeCheck Speicher\e[0m"
     
                 
@@ -183,10 +193,12 @@ function allocate() {
 
                 #task aus buddylist löschen, da er oben drüber in tasklist gesetzt wurde
                
-                unset buddylist["$indexForDelete"] #es wird der buddy aus der buddylist gelöscht, da er 4 zeilen darüber als nun aktiver task in die tasklist gesetzt wurde
-                local cloneList=("${buddylist[@]}") #clon zeugs, bin noch nicht sicher ob man es noch braucht, hat davor bei unset "null" geschrieben statt zu löschen
+                unset buddylist["$indexForDelete"] #es wird der buddy aus der buddylist gelöscht, da er 4 zeilen darüber als nun aktiver task in die tasklist gesetzt wurde; man benutzt wieder indexForDelete, da die indices in allen listen parallel sind
+                local cloneList=("${buddylist[@]}") #clone zeugs, bin noch nicht sicher ob man es noch braucht, hat davor bei unset "null" geschrieben statt zu löschen
                 buddylist=("${cloneList[@]}") #diese zeile + zeile darüber wahrscheinlich obsolete
                 
+                
+
                 #id aus buddyidlist löschen, das er oben drüber in taskidlist gesetzt wurde
                 
                 unset buddyidlist["$indexForDelete"] #id wird aus der buddyIDlist gelöscht, da die id nun in taskidlist ist
@@ -194,6 +206,8 @@ function allocate() {
                 buddyidlist=("${cloneIdList[@]}") 
                 
             
+            #das ist nun der andere(kompliziertere) fall, wenn der buddy noch ein oder mehrmals geteilt werden muss, bis der task perfekt hinein passt
+
             elif [ "$task" -le "$half" ] #task ist kleiner oder gleich der hälfte des buddys, also muss noch ein oder mehrmals halbiert werden, um den kleinst möglichen buddy zu finden in den der task passt
             then
                
@@ -201,33 +215,42 @@ function allocate() {
                 
                 #echo "indexForDelete $indexForDelete"
 
+
+
                 #buddy aus buddylist löschen, da er nun aufgeteilt wird
                 
                 unset buddylist["$indexForDelete"] #der task wird aus der buddyliste gelöscht, da er nun benutzt wird
-                local cloneList=("${buddylist[@]}") #idk
-                buddylist=("${cloneList[@]}") #idk
+                local cloneList=("${buddylist[@]}") #clone
+                buddylist=("${cloneList[@]}") #clone
 
 
-                #buddy ID aus buddyidlist löschen, da dieser task erstmal nicht mehr existiert
                
-                
+                #buddy ID aus buddyIDlist löschen, da dieser task erstmal nicht mehr existiert
+
                 local saveIndexOfDeletedBuddy="${buddyidlist[$indexForDelete]}" #id saven, da sie vielleicht wieder ins dictionary als parent id geschrieben wird
                 
-                unset buddyidlist["$indexForDelete"]
-               
-                local cloneIdList=("${buddyidlist[@]}") #idk
-                buddyidlist=("${cloneIdList[@]}") #idk
+                unset buddyidlist["$indexForDelete"] #buddy ID aus buddyIDlist löschen
+                local cloneIdList=("${buddyidlist[@]}") #clone
+                buddyidlist=("${cloneIdList[@]}") #clone
                 
-                loopCount=0 #um mit zu zählen wie oft die loop läuft
+                loopCount=0 #wird weiter unten benötigt um mit zu zählen wie oft die loop läuft, wichtig für if unten; wird hier nur auf 0 gesetzt, wichtig, dass es immer wieder auf 0 gesetzt wird
 
+
+                #weiß nicht mehr ob das noch benutzt wird, glaube nicht
                 local doubleHalf=$(("$half"/2)) #wenn buddy für den task nur noch einmal geteilt werden muss (also größer als die hälfte der aktuellen hälfte ist), dann wird etwas anderes ins dictionary geschrieben, deshlab hier der check
                 local halfCheck=false
-                if [ "$task" -gt "$doubleHalf" ]
-                then 
-                    halfCheck=true
 
-                fi
 
+                #####
+                # if [ "$task" -gt "$doubleHalf" ]
+                # then 
+                #     halfCheck=true
+
+                # fi
+
+
+
+                #nun muss wieder geteilt werden bis der task perfekt in den buddy passt (ähnliches Verfahren wie am Anfang dieser Funktion)
                 while [ "$task" -le "$half" ] #hier wird wieder so lange geteilt, bis der kleinst mögliche buddy gefunden wurde, jede Teilung wird als leerer Buddy in die buddyliste geschrieben
                                                 #wieder so lange bis der task größer als die halbierung ist (muss am ende verdoppelt werden, s. 10 Zeilen unten)
                 do
@@ -235,26 +258,33 @@ function allocate() {
                     
 
 
-                    buddylist+=("$half") #jede teilung kommt in buddylist
-                    buddyidlist+=("$idCount") #neuer buddy bekommt neue id durch hochzählen von idCount
-                    local saveIdForTaskIdList="$idCount"
+                    buddylist+=("$half") #jede teilung kommt in buddylist als leerer Buddy, mit der anderen Hälfte wird weiter gearbeitet (geteilt oder allocated)
+                    buddyidlist+=("$idCount") #neuer buddy bekommt neue ID durch hochzählen von idCount
+
+
+                    #####
+                    #local saveIdForTaskIdList="$idCount"
 
                     #dictionary weiter schreiben
-                    idCountMinusOne=$(("$idCount"-1))
+                    idCountMinusOne=$(("$idCount"-1)) #ID mit zugehöriger parent ID wird wieder ins dict geschrieben (ähnlich wie oben)
+
+
 
 ##################################################################################################################################################################
-
+                    #dieser teil ist extrem wichtig. Bei der ersten Teilung muss der neue buddy die Parent ID vom buddy bekommen aus dem er geteilt wurde (wird ins dict geschrieben),
+                    #wenn danach weiter geteilt wird, wird wieder id und parent id über idCount und idCountMinusOne geregelt
 
                     #"$halfCheck" = true 
-                    if [ "$loopCount" -eq 0 ] #dev#dieser fall tritt immer erstmal ein, muss hinbekommen, dass er nur eintritt wenn es auch wirklich nur einmal passiert
+                    if [ "$loopCount" -eq 0 ] #loopCount ist 0 beim ersten durchlauf der schleife
+                    
                     then
                     
-                    idAssign["$idCount"]="$saveIndexOfDeletedBuddy" #wenn loopcount 0 ist, heißt das, dass nur einmal geteilt werden musste, also bekommt der geteilte buddy die parent id des tasks davor ins dictionary geschrieben
+                    idAssign["$idCount"]="$saveIndexOfDeletedBuddy" #wenn loopcount 0 ist, heißt das, dass nur einmal geteilt werden musste, also bekommt der geteilte buddy die parent id des buddys davor (der buddy der ein bisschen weiter oben aus der buddylist gelöscht wurde) ins dictionary geschrieben (z.B. 8->2 statt 8->7)
                     
             
                     else
     
-                    idAssign["$idCount"]="$idCountMinusOne" #wenn loopcount > 0, heißt das, es musste mehr als einmal geteilt werden, also bekommt
+                    idAssign["$idCount"]="$idCountMinusOne" #wenn loopcount > 0, heißt das, es musste mehr als einmal geteilt werden, also bekommt die der buddy ab jetzt die parent id der gerade vorherigen Teilung (teilung in dieser schleife)
                   
 
                     fi
@@ -267,23 +297,27 @@ function allocate() {
 
                     #echo "half $half"
                     
-                    half=$(("$half"/2)) #wird so lange geteilt bis passt
+                    half=$(("$half"/2)) #buddys werden wieder so lange geteilt bis passt
                     #echo "half after half $half"
 
-                    loopCount=$(("$loopCount"+1))
+                    loopCount=$(("$loopCount"+1)) #loopcount hoch zählen
                     
                     #echo "half added to buddylist: $half"
                 done
+
                 # local lang="${#buddylist[@]}"
                 # lang=$(("$lang"-1))
                 #unset buddylist["$lang"]
                 #local cloneList=("${buddylist[@]}")
                 #buddylist=("${cloneList[@]}")
                 #echo "remove from buddylist: $half"
-                local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist - aber man braucht einen buddy der größer als der task ist, sodass der task rein passt
+
+
+                local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist (mathematisch so gelöst) - aber der buddy muss ja größer als der task sein
                 tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
+
                 idCountMinusOne=$(("$idCount"-1))
-                taskidlist+=("$idCountMinusOne") 
+                taskidlist+=("$idCountMinusOne") #task bekommt entsprechende id, man muss 1 abziehen, da der count aus der schleife 1 zu hoch ist (da geteilt wird bis buddy kleiner gleich task, aber man will ja den verdoppelten, siehe 3 zeilen weiter oben memToAdd=half*2)
                 echo -e "\e[32mTask $task erfolgreich allocated - benötigte $memToAdd Speicher\e[0m"
             
                 # echo "add to tasklist: $memToAdd"
@@ -301,6 +335,11 @@ function allocate() {
 
 }
 
+
+
+
+# Dies ist nun die Funktion um Tasks zu beenden.
+# Wen nein Task beendet wird, wird er aus der tasklist gelöscht und in die buddylist eingeügt (als nun leerer buddy). Analog dazu wird seine id aus der taskidlist in die buddyidlist verschoben.
 function deallocate() {
     
 
@@ -309,57 +348,72 @@ function deallocate() {
 
 
 
-    index=$1
-    tasklistLen="${#tasklist[@]}"
+    index=$1 #input der function. Welcher Task soll deallocated werden. User gibt hier eine Zahl ein. 1 heißt erster Task der tasklist wird deallocated (wenn es ihn gibt)
+    #bash arrays starten bei 0 aber der user gibt "normale" Indexangabe an, also muss später index-1 gerrechnet werden um den richtigen buddy zu löschen
+
+    tasklistLen="${#tasklist[@]}" #länge der tasklist
     
 
-    if [[ "$index" -gt "$tasklistLen" ]]
+    if [[ "$index" -gt "$tasklistLen" ]] #wenn der input des users größer ist als elemente(tasks) in der liste, bekommt er die meldung, dass es diesen task nicht gibt (liste ist nur 4 lang, er will task 5 deallocaten -> geht nicht)
     then
         echo -e "\e[31mDieser Task existiert nicht\e[0m"
 
-    elif [[ "$index" -le 0 ]]   
+    elif [[ "$index" -le 0 ]]   #wenn user negative zahlen oder 0 eingibt, geht auch nicht
     then
         echo -e "\e[31mNicht möglich - Tasks fangen bei 1 an\e[0m"
 
-    else
+    
+    #wenn beide ifs nicht erfüllt sind, heißt es es ist ein task der in der liste ist
+    else 
 
-        index=$(("$1"-1))
-        buddyThatHasToGoBackInBuddylist="${tasklist["$index"]}"
-        buddylist+=("$buddyThatHasToGoBackInBuddylist")
-        buddyIDThatHasToGoBack=${taskidlist["$index"]}
-        buddyidlist+=("$buddyIDThatHasToGoBack")
+        index=$(("$1"-1)) #1 von index abziehen um richtigen array index zu bekommen
 
-        
+        buddyThatHasToGoBackInBuddylist="${tasklist["$index"]}" #den buddy saven der gelöscht wird (kein index sondern wirklicher zweierpotenz buddy, wird später auch für dict benötigt)
+        buddylist+=("$buddyThatHasToGoBackInBuddylist") #buddy aus tasklist in buddylist kopieren
+
+
+        buddyIDThatHasToGoBack=${taskidlist["$index"]} #buddy id des zu löschenden buddys
+        buddyidlist+=("$buddyIDThatHasToGoBack") #buddy ID aus taskIDlist in buddyIDlist kopieren
+
+        #task aus tasklist löschen
         unset tasklist["$index"]
         taskCloneList=("${tasklist[@]}")
         tasklist=("${taskCloneList[@]}")
 
+        #task ID aus taskIDlist löschen
         unset taskidlist["$index"]
         taskIdCloneList=("${taskidlist[@]}")
         taskidlist=("${taskIdCloneList[@]}")
-     
 
-        
-        local mergeLength=${#buddylist[@]} #wie viele tasks sind in buddylist = wie viel buddys könnten gemerged werden
-        
-        local printIndex=$(("$index"+1))
+        #user mitteilen, dass buddy deallocated wurde
+        local printIndex=$(("$index"+1)) #wird von arrayindex in menschen index gerechnet
         echo -e "\e[32mTask $printIndex deallocated\e[0m"
-        for (( c=1; c<="$mergeLength"; c++ )) #so oft merge function callen wie buddys in der liste sind, weniger reicht wahrscheinlich
+
+        #nun ist der deallocate prozess vorbei(task und id wurden aus listen gelöscht und als leerer buddy in buddylist und seine id in buddyIDlist geschrieben)
+        #hier beginnt der merge prozess: wenn zwei geschwisterbuddys in der buddylist sind werden sie zu ihren Parent Buddy gemerged
+
+       
+       
+        local mergeLength=${#buddylist[@]} #wie viele tasks sind in buddylist = wie viel buddys könnten gemerged werden
+
+
+
+        for (( c=1; c<="$mergeLength"; c++ )) #mergeBuddys function wird so oft gecallt wie buddys in der liste sind #####(-1 reicht wahrscheinlich)
         do
-            mergeBuddys
+            mergeBuddys #function wird gecallt
             
         done
        
 
-        #dictionary zurücksetzen, wenn keine tasks mehr laufen
-        mergeLengthBuddy=${#buddylist[@]}
-        mergeLengthTask=${#tasklist[@]}
+        #dictionary zurücksetzen, wenn keine tasks mehr laufen, nicht wirklich wichtig, resettet die "id -> parent id" vergabe im dictionary
+        mergeLengthBuddy=${#buddylist[@]} #länge der buddylist in variable zuweisen
+        mergeLengthTask=${#tasklist[@]} #länge der tasklist in variable zuweisen
 
-        if [ "$mergeLengthBuddy" -eq 1 ] && [ "$mergeLengthTask" -eq 0 ]
+        if [ "$mergeLengthBuddy" -eq 1 ] && [ "$mergeLengthTask" -eq 0 ] #wenn buddylist 1 lang ist und tasklist 0 lang ist wird dict gecleared
         then
             echo -e "\e[41mCLEARING DICTIONARY\e[0m"
             unset idAssign[@] #dictionary löschen
-            idCount=1 #idcount zurücksetzen
+            idCount=1 #idcount zurücksetzen, WICHTIG
         fi
         
     fi
@@ -368,9 +422,14 @@ function deallocate() {
 
 }
 
+
+
+
+#Dies ist nun die Funktion die benutzt wird um gleiche Buddy wieder zu ihrem Parent Buddy zu verschmelzen
+#Nur buddys die davor auch geteilt wurden können wieder zu einem werden
 function mergeBuddys() {
 
-    printList
+    printList #printed einmal alle 4 listen für den user, so sieht man was im programm passiert
     echo -e "\e[45mMERGING...\e[0m"
     
 
@@ -379,6 +438,9 @@ function mergeBuddys() {
     local eleCount=0 #count der äußeren loop
     local elemCount=0 #count für die innere loop
    
+
+
+    #hier wird nun jedes element der buddyIDlist mit jedem element verglichen, dafür werden zwei for loops benutzt
     for ele in "${buddyidlist[@]}"
     do
 
@@ -387,15 +449,15 @@ function mergeBuddys() {
             break
         fi
 
-        indx=0 #muss bei jeder neuen ele loop wieder auf 0
-        elemCount=0
+        indx=0 #muss bei jeder neuen ele loop (äußere loop) wieder auf 0
+        elemCount=0 #muss bei jeder neuen ele loop (äußere loop) wieder auf 0
         
-        for elem in "${buddyidlist[@]}"
+        for elem in "${buddyidlist[@]}" #innere loop
         do  
 
            
         
-            if [ "$ele" -eq "$elem" ] && [ "$eleCount" -ne "$elemCount" ] #wenn die ids sich gleichen, aber es nicht die selben in der liste sind
+            if [ "$ele" -eq "$elem" ] && [ "$eleCount" -ne "$elemCount" ] #wenn die ids sich gleichen, aber es nicht die selben in der liste sind (da kein buddy mit sich selbst mergen darf!)
             then
 
 
@@ -407,49 +469,47 @@ function mergeBuddys() {
 
                 
                 
-                
-                local indxMinusOne=$(("$indx"-1))
-                local saveBuddyId="${buddyidlist["$eleCount"]}" #id saven für später, kann entwerder eleCount oder elemCount saven, ist egal, sind gleich
+                ####
+                #local indxMinusOne=$(("$indx"-1))
+                local saveBuddyId="${buddyidlist["$eleCount"]}" #id saven für idAssign später, kann entwerder eleCount oder elemCount saven, ist egal, sind gleich
               
-               
                 #buddys addieren
                 
+                local buddyOne=${buddylist["$eleCount"]} #buddy 1
+                local buddyTwo=${buddylist["$elemCount"]} #buddy 2
                 
-                
-              
-               
-                local buddyOne=${buddylist["$eleCount"]}
-                local buddyTwo=${buddylist["$elemCount"]}
-                
-           
 
-                local mergedBuddy=$(("$buddyOne"+"$buddyTwo")) #muss man hier schon rechnen, da später gelöscht
+                local mergedBuddy=$(("$buddyOne"+"$buddyTwo")) #buddys werden zu parent buddy addiert
+                #muss man hier schon rechnen, da später gelöscht
 
 
                 #buddy indices aus buddyidlist löschen
-                unset buddyidlist["$eleCount"] #index der gleichen tasks aus id liste löschen
-                unset buddyidlist["$elemCount"] ##index der gleichen tasks aus id liste löschen
+                #index der gleichen tasks aus id liste löschen
+                unset buddyidlist["$eleCount"] #id des einen siblings löschen
+                unset buddyidlist["$elemCount"] #id des anderen siblings löschen
               
-                buddyIdCloneList=("${buddyidlist[@]}")
-                buddyidlist=("${buddyIdCloneList[@]}")
+                buddyIdCloneList=("${buddyidlist[@]}") #clone
+                buddyidlist=("${buddyIdCloneList[@]}") #clone
 
-                #mergen der zwei gleichen buddys
-                #beide löschen
+
+
+                #MERGEN DER ZWEI BUDDYS
+                #beide löschen aus buddylist
                 unset buddylist["$eleCount"]
                 unset buddylist["$elemCount"]
-                buddyCloneList=("${buddylist[@]}")
-                buddylist=("${buddyCloneList[@]}")
+                buddyCloneList=("${buddylist[@]}") #clone
+                buddylist=("${buddyCloneList[@]}") #clone
                
                 #mergedBuddy wieder in buddylist einfügen
                 buddylist+=("$mergedBuddy")
              
                 #id für neuen mergedBuddy in buddyidlist eintragen
-                buddyidlist+=("${idAssign["$saveBuddyId"]}") #zugehörige id aus dict in idlist schreiben
+                buddyidlist+=("${idAssign["$saveBuddyId"]}") #zugehörige id aus dict in idlist schreiben. (z.B. saveBuddyId=8 ---> idAssign[8]=2 ===> der mergedBuddy bekommt id 2 (DIE DIE ER AUCH BEVOR ER GETEILT WURDE HATTE))
              
 
                 breakCheck=true #um loop zu beenden, wenn ein buddy zum mergen gefunden wurde
               
-                break
+                break 
 
             
                 
@@ -458,16 +518,15 @@ function mergeBuddys() {
            
             
 
-            indx=$(("$indx"+1)) #count up
-            elemCount=$(("$elemCount"+1)) #count up elem loop
+            indx=$(("$indx"+1)) #count up indx
+            elemCount=$(("$elemCount"+1)) #count up elem loop (innerer Count)
             
         done
-        eleCount=$(("$eleCount"+1)) #count up ele loop
+        eleCount=$(("$eleCount"+1)) #count up ele loop (äußerer Count)
     done
 }
 
-#######################################
-
+###############testzeugs########################
 inoo=1
 function testrun() {
 
@@ -496,7 +555,11 @@ function testrunD() {
     devAdd
 
 }
+##########################################
 
+
+
+# function printed einfach alle listen, so sieht user was im programm passiert
 function printList() {
     echo "---------"
     echo -e "\e[36mbuddylists: ${buddylist[@]}\e[0m"
@@ -517,14 +580,16 @@ function printList() {
 function checkIfPowerOfTwo() {
 
     n=$1
-    (( n > 0 && (n & (n - 1)) == 0 )) #von so, keine ahnung was hier returned wird?############remove###############https://unix.stackexchange.com/questions/481552/check-if-numbers-from-command-line-are-powers-of-2/481558
+    (( n > 0 && (n & (n - 1)) == 0 )) #von so, noch keine ahnung was hier returned wird?############remove###############https://unix.stackexchange.com/questions/481552/check-if-numbers-from-command-line-are-powers-of-2/481558
 }
 
-# check0=true #wichtig für while loops
-# check1=true #same
-# initCheck=true
+
+
 
 ###main###
+
+
+#Diese while Schleifen sind das menu für den user
 while true 
 do
     read -p "Speicher eingeben" memoryInput #user input für speicher den programm haben soll
@@ -580,10 +645,11 @@ do
         then
 
             echo " "
-            echo -e "\e[34mbuddy list: ${buddylist[@]}\e[0m"
-            echo -e "\e[34mbuddy ID list: ${buddyidlist[@]}\e[0m"
+            echo -e "\e[36mbuddy list: ${buddylist[@]}\e[0m"
+            echo -e "\e[36mbuddy ID list: ${buddyidlist[@]}\e[0m"
             echo -e "\e[33mtask list: ${tasklist[@]}\e[0m"   
             echo -e "\e[33mtask ID list: ${taskidlist[@]}\e[0m"   
+            echo ""
 
         elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
         then
@@ -618,6 +684,7 @@ do
 
         elif [ "$inp" = "dict" ] || [ "$inp" = "z" ] || [ "$inp" = "Z" ]
         then
+            echo ""
             echo -e "\e[45mDictionary\e[0m"
             for i in "${!idAssign[@]}"
             do
