@@ -1,6 +1,25 @@
 #! /usr/bin/bash
 
 
+
+
+
+# Das ganze Programm besteht im Groben aus 3 großen Funktionen, sowie 4 Listen und einem Dictionary
+# allocate(), deallocate() und mergeBuddys()
+#
+# alle funktionen werden vor der Funktion noch einmal genauer erklärt.
+# allocate() wird benutzt um neue Tasks in passende buddys zu setzen. Sie errechnet den passenden buddy, setzt aktive buddys in die tasklist und nicht aktive (leere) buddys in die buddylist, vergibt buddy ids und regelt die parent id vergabe per dictionary
+# deallocate() wird benutzt um Tasks, die beendet werden sollen, wieder aus der Tasklist in die Buddylist zu verschieben. deallocate() ruft immer die mergeBuddys() funktion auf.
+# mergeBuddys() wird benutzt um leere Buddys in der Buddylist wieder zu ihrem Vaterbuddy zusammen zu fügen.
+#  
+# In dem Array tasklist werden aktive Tasks (also gefüllte Buddys) gespeichert
+# In dem Array buddylist werden nicht aktive buddys (leere buddys) gespeichert 
+# In dem Array buddyidlist werden die ids zu jedem leeren buddy gespeichert -> z.B. buddylist[2] hat id: buddyidlist[2] - es können immer nur 2 buddys die gleiche id haben
+# In dem Array taskidlist werden die ids zu jedem befüllten buddy gespeichert -> z.B. tasklist[2] hat id: taskidlist[2] - es können immer nur 2 buddys die gleiche id haben
+# In dem dictionary idAssign werden ids und dazu ihre Parent IDs gespeichert -> z.B. buddys mit der id 2 -> haben parent id 1 -> wenn also die beiden buddys mit der id 2 wieder gemerged werden, hat ihr vaterbuddy die id 1
+
+
+#unwichtig
 function devAdd()  {
     
     sumBuddy=0
@@ -28,44 +47,60 @@ function devAdd()  {
 #memory=1024
 
 re='[a-zA-Z]'
-num='[0-9]'
+num='[0-9]' #wird für user input benutzt (checkt ob eingabe eine Zahl ist)
 
 tasklist=() #liste für aktive tasks (befüllte buddys)
 buddylist=() #liste für leere buddys
-taskidlist=()
-buddyidlist=()
-declare -A idAssign
+taskidlist=() #liste für die id der aktiven buddys
+buddyidlist=() #liste für id der leeren buddys
+declare -A idAssign #dictionary für id->vater id
 
-idCount=1
+idCount=1 #wichtig, regelt id zuweisungen und vater ids
+
+
+
+
+
 
 ###functions###
 
 
 
+# Allocate Function
+# Die allocate Funktion besteht aus 2 Teilen
+# Teil 1 läuft, wenn noch kein Buddy vergeben wurde (Bei Programmstart oder wenn im laufenden Programm alle Tasks beendet sind)
+# Sobald eine allocation durchgeführt wurde, wird Teil 2 benutzt.
+# Teil 2 durchläuft dann die buddylist(leere Buddys) und sucht nach dem kleinstmöglichst passenden buddy.
+# Wenn direkt ein richtiger buddy gefunden wurde (z.B. Task 30, Buddy 32), wird der Buddy (32) aus der buddylist gelöscht und in die tasklist gesetzt. Die Id wird aus der buddyidlist gelöscht und in die taskidlist gesetzt. (einfacher Fall)
+# Wenn kein passender buddy in den leeren buddys gefunden werden kann muss ein buddy geteilt werden (z.B. Task 30, Buddy 64 -> man will aber buddy 32 haben). Auch hier wird aber wieder das kleinstmögliche passende gesucht (task=30 und buddylist=(256, 64, 16) --> 64 wird genommen und geteilt bis passt)
+# In diesem Fall müssen auch wieder neue ids an die neu geteilten buddys vergeben werden. Bei jedem Teilvorgang wird die eine Hälfte der Teilung in die buddylist (als leeres Buddy) geschrieben, bekommt dazu eine neue id in die buddyidlist und einen Eintrag in das idAssign dictionary mit Verweis auf den zuvor geteilten Buddy (64 wird geteilt in 32 32 - das erste 32 wird direkt in die buddylist geschrieben, das andere wird weiter benutzt (geteilt oder zugewiesen), beide bekommen als parent id die 64)
+# 
+
+
+
+
 function allocate() {
 
-   
 
+    local mem=$1    #speicher der vom nutzer eingegeben wurde
+    local task=$2   #task der nun allocated werden soll
+    local sizeCheck=$(("$mem"+1)) #
+    local i=0 #zählvariable
+    local spaceLeftCheck=false #boolean der später benutzt wird
 
-    local mem=$1    #1024
-    local task=$2   #120
-    local sizeCheck=$(("$mem"+1))
-    local i=0
-    local spaceLeftCheck=false
-
-     echo -e "\e[42mALLOCATE Task $task\e[0m"
+    echo -e "\e[42mALLOCATE Task $task\e[0m"
   
 
-    if [ "${#buddylist[@]}" -eq 0 ] && [ "${#tasklist[@]}" -eq 0 ] #wenn die liste leer ist wird dieses verfahren benutzt
+    if [ "${#buddylist[@]}" -eq 0 ] && [ "${#tasklist[@]}" -eq 0 ] #wenn die liste leer ist wird dieses verfahren benutzt (check ob buddylist und tasklist leer ist)
     then
 
-        if [ "$task" -le "$mem" ]
-        then
-            while [ "$task" -le "$mem" ] #-le da task in memory passen soll
+        if [ "$task" -le "$mem" ] #wenn der task < speicher
+        then 
+            while [ "$task" -le "$mem" ] #-le da task in memory passen soll; solange der Task <= dem Speicher -> wird der Speicher geteilt, bis der Speicher kleiner ist -> dann speicher einmal verdoppelt (task passt nun perfekt in den Zweierpotenz buddy)
                 
                 do  
                 mem=$(("$mem"/2))    #teilt solange bis passt
-                if [ "$mem" -ge "$task" ] #solange der task noch kleiner als gesammt mem ist wird jede halbierung als leerer buddy in die liste geschrieben
+                if [ "$mem" -ge "$task" ] #solange der task noch kleiner als gesammt mem ist wird jede halbierung als leerer buddy in die buddylist geschrieben
                 then
                     
                     buddylist+=("$mem") #leere buddys kommen in liste
@@ -73,8 +108,7 @@ function allocate() {
                     buddyidlist+=("$idCount") #jede Teilung, also jeder buddy, bekommt seine id in der buddyidlist
                     
                     #dictionary für spätere rückwärtszuweisung
-                    idCountMinusOne=$(("$idCount"-1))
-                    #echo "idCountMinusOne = $idCountMinusOne"
+                    idCountMinusOne=$(("$idCount"-1)) 
                     idAssign["$idCount"]="$idCountMinusOne" #buddys mit id 3 bekommen (3-1=2) als "vaterid" in dictionary geschrieben
                     
                    
@@ -84,16 +118,23 @@ function allocate() {
                 fi       
                 done
             
-            mem=$(("$mem"*2)) #dann ein mal verdoppeln
+            mem=$(("$mem"*2)) #dann ein mal verdoppeln, da so lange geteilt wurde, bis mem<task, man will aber dass task noch in mem passt
             
             tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
+
             echo -e "\e[32mTask $task erfolgreich allocated - benötigte $mem Speicher\e[0m"
+
             idCountMinusOne=$(("$idCount"-1))
             taskidlist+=("$idCountMinusOne") #task bekommt id seines "buddys", da aber oben schon einmal hoch gezählt wurde, muss task jetzt count-1 bekommen
-        else
+
+        else #wenn der Task > Speicher (von User festgelegt), bekommt user die meldung, dass Task zu groß für den Speicher ist
+
             echo -e "e[31mTask $task ist zu groß, nicht genug speicher verfügbar\e[0m"
+
         fi
-    elif [ "${#buddylist[@]}" -gt 0 ] #sobald die erste allocation durchgeführt wurde, wird ab dann diese methode benutzt
+
+
+    elif [ "${#buddylist[@]}" -gt 0 ] #sobald die erste allocation durchgeführt wurde, wird ab dann diese methode benutzt (buddylist > 0)
     then
         #echo "else case"
         #FORLOOP
@@ -101,14 +142,14 @@ function allocate() {
        
         for elem in "${buddylist[@]}" #hier wird die buddyliste(mit leeren buddys) durchlaufen, und nach dem kleinst möglichen buddy gesucht in den der task passt,
             #indem zum einen geschaut wird ob ein buddy größer(gleich) dem angeforderten task ist UND ob ein buddy kleiner als der buddy vor ihm in der liste ist
-            #DIE BUDDYS WERDEN NACHEINANDER DURCHLAUFEN UND ÜBERSCHREIBEN SICH SO LANGE BIS DER KLEINSTE BUDDY PASST (oder einer der kleinsten wenn es mehrere gibt (-le))
+            #DIE BUDDYS WERDEN NACHEINANDER DURCHLAUFEN UND ÜBERSCHREIBEN $sizeCheck SO LANGE BIS DER KLEINSTE BUDDY PASST (oder einer der kleinsten wenn es mehrere gibt (-le))
         do 
             
-            if [ "$elem" -ge "$task" ] && [ "$elem" -le "$sizeCheck" ] #task ist kleiner als elembuddy und elembuddy ist kleiner als der buddy vorher in der liste, ?sollte egal sein ob -le oder -lt?
+            if [ "$elem" -ge "$task" ] && [ "$elem" -le "$sizeCheck" ] # wenn task kleiner als elembuddy(aktueller buddy der for loop) und elembuddy kleiner als der buddy vorher in der liste [?< oder <= sollte egal sein?]
             then   
                 sizeCheck=$elem #wird benutzt um zu prüfen, dass bei Durchlaufen durch Liste ein kleines und passender buddy nicht durch einen größeren passenden buddy überschrieben wird (man will den kleinst möglichen buddy finden der von der größe her passt)
                 
-                local half=$(("$elem"/2)) #wird halbiert, im nächsten if wird damit weiter gearbeitet
+                local half=$(("$elem"/2)) #buddy wird halbiert, im nächsten if wird damit weiter gearbeitet
                 #echo "half $half"
                 
                 local indexForDelete=$i #element bei dem 
