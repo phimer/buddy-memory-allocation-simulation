@@ -3,6 +3,7 @@
 ##################
 #######fixen
 #WENN MAN 1 ALLOCATED BEKOMMT DER BUDDY DIE GRÖßE 0
+#Beim Teilvorgang if 0 then 1 machen
 #####################
 
 
@@ -180,6 +181,8 @@ function allocate() {
             if [ "$task" -gt "$half" ] #task ist größer als die halbierung des buddys, dh er passt direkt in diesen buddy, und man muss den buddy nicht weiter halbieren
             then 
                 
+                echo -e "\e[31mTask passt direkt rein\e[0m"
+
                 tasklist+=("$sizeCheck") #der buddy wird in die TASKLISTE gesetzt, es wird sizecheck benutzt, da diese variable den passenden leeren buddy aus der for loop darüber hat
                 taskidlist+=("${buddyidlist["$indexForDelete"]}") #entsprechende id aus buddyidlist in taskidlist kopieren, indexForDelete wurde in der loop darüber gespeichert, ist also der index des passenden buddys
                 echo -e "\e[32mTask $task erfolgreich allocated - benötigte $sizeCheck Speicher\e[0m"
@@ -211,6 +214,8 @@ function allocate() {
             elif [ "$task" -le "$half" ] #task ist kleiner oder gleich der hälfte des buddys, also muss noch ein oder mehrmals halbiert werden, um den kleinst möglichen buddy zu finden in den der task passt
             then
                
+                echo -e "\e[31mTask ist kleiner gleich der Hälfte des buddys -> muss noch paar mal halbiert werden\e[0m"
+
                 #echo "half $half"
                 
                 #echo "indexForDelete $indexForDelete"
