@@ -17,34 +17,11 @@
 # In dem dictionary idAssign werden ids und dazu ihre Parent IDs gespeichert -> z.B. buddys mit der id 2 -> haben parent id 1 -> wenn also die beiden buddys mit der id 2 wieder gemerged werden, hat ihr vaterbuddy die id 1
 
 
-#unwichtig
-function devAdd()  {
-    
-    sumBuddy=0
-    sumTask=0
-
-
-    for el in "${buddylist[@]}"
-    do
-        sumBuddy=$(("$sumBuddy"+"$el"))
-    done
-
-    for elo in "${tasklist[@]}"
-    do
-        sumTask=$(("$sumTask"+"$elo"))
-    done
-
-
-
-    res=$(("$sumBuddy"+"$sumTask"))
-  
-    echo "devAdd: $res"
-}
 
 
 #memory=1024
 
-re='[a-zA-Z]'
+#re='[a-zA-Z]'
 num='[0-9]' #wird für user input benutzt (checkt ob eingabe eine Zahl ist)
 
 tasklist=() #liste für aktive tasks (befüllte buddys)
@@ -60,8 +37,8 @@ idCount=1 #wichtig, regelt id zuweisungen und vater ids
 
 
 
-###functions###
 
+###functions###
 
 
 # Allocate Function
@@ -570,7 +547,7 @@ function testrunD() {
     devAdd
 
 }
-##########################################
+###############testzeugs########################
 
 
 
@@ -605,21 +582,27 @@ function checkIfPowerOfTwo() {
 
 
 #Diese while Schleifen sind das menu für den user
+
+#Die erste schleife fordert den user auf den Speicher des Programms festzulegen.
+#Es werden nur Zahlen und vor allem nur Zweierpotenzen zugelassen. Dazu wird die function checkIfPowerOfTwo() benutzt
+#Wenn die Eingabe keine Zweierpotenz ist, wird der user erneut zur eingabe aufgefordert
 while true 
 do
     read -p "Speicher eingeben" memoryInput #user input für speicher den programm haben soll
     mem=$memoryInput #mem bleibt immer dieser eingegeben original wert, wird zum rechnen benutzt
     if [[ "$memoryInput" =~ $num ]] && checkIfPowerOfTwo "$memoryInput" = true #user input muss zahl sein und muss zweierpotenz sein
     then 
-# ################
 
 
-
+    #Diese Schleife regelt das Hauptmenü.
+    #Der user kann hier taks allocaten, deallocaten, informationen zu buddys und ids anzeigen, das dictionary mit ids und pids anzeigen und mit e das programm beenden.
     while true
     do 
-        read -p "Task (a)llocaten, Task (d)eallocate, (I)nformationen anzeigen, (Z)uweisungstabelle anzeigen oder (e)xit" inp #"hauptmenü", user kann hier task allocaten, deallocaten, alle aktiven tasks anzeigen oder programm verlassen
-        #check1=true
-        if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  # wenn user einen task starten will (allocate)
+        read -p "Task (a)llocaten, Task (d)eallocate, (I)nformationen anzeigen, (Z)uweisungstabelle anzeigen oder (e)xit" inp #"hauptmenü"
+        
+
+        # wenn user einen task starten will (allocate)
+        if [ "$inp" = "a" ] || [ "$inp" = "allocate" ]  
         then
         
             while true
@@ -630,10 +613,10 @@ do
                 
                     echo " "
                 
-                    allocate "$mem" "$allocateInput"
+                    allocate "$mem" "$allocateInput" #allocate function wird mit user input und gesamtspeicher aufgerufen
 
-                    
-                    echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
+                    #buddylist und tasklist wird angezeigt
+                    echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m" 
                     echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
                     echo ""
                     break
@@ -656,7 +639,9 @@ do
                     break
                 fi
             done
-        elif [ "$inp" = "i" ] || [ "$inp" = "I" ] || [ "$inp" = "info" ] #wenn user alle aktiven tasks anzeigen lassen will
+
+        #Informationen zu allen listen
+        elif [ "$inp" = "i" ] || [ "$inp" = "I" ] || [ "$inp" = "info" ] 
         then
 
             echo " "
@@ -666,7 +651,8 @@ do
             echo -e "\e[33mtask ID list: ${taskidlist[@]}\e[0m"   
             echo ""
 
-        elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] #wenn user einen task beenden will (deallocate)
+        #wenn user einen task beenden will (deallocate)
+        elif [ "$inp" = "d" ] || [ "$inp" = "deallocate" ] 
         then
             read -p "Welchen Task deallocaten?" deallocInput
 
@@ -679,15 +665,18 @@ do
             else
 
                 echo " "
-                deallocate "$deallocInput"
+                deallocate "$deallocInput" #deallocate funtion wird mit user input als argument aufgerufen
                 echo -e "\e[36mLeere Buddys: ${buddylist[@]}\e[0m"
                 echo -e "\e[33mBelegte Buddys: ${tasklist[@]}\e[0m"   
 
             fi
-        elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] #end program
+
+        #end program
+        elif [ "$inp" = "e" ] || [ "$inp" = "exit" ] 
         then
             echo "Programm beendet"
             exit 1
+
         elif [ "$inp" = "mem" ] #nur zum testen
         then
             echo "mem $mem"
@@ -697,7 +686,8 @@ do
             echo "max potmem: $singleTaskMem" 
             echo "buddylist: ${buddylist[@]}"
 
-        elif [ "$inp" = "dict" ] || [ "$inp" = "z" ] || [ "$inp" = "Z" ]
+        #user kann sich dictionary mit ids und pids anzeigen lassen
+        elif [ "$inp" = "dict" ] || [ "$inp" = "z" ] || [ "$inp" = "Z" ] 
         then
             echo ""
             echo -e "\e[45mDictionary\e[0m"
@@ -708,14 +698,15 @@ do
                 echo ""
             done
 
-        else #wenn user eingabe keines der oeberen commands ist (a, d, t, e) muss er erneut erwas eingeben
+        else #wenn user eingabe keines der oeberen commands ist (a, d, i, z, e) muss er erneut erwas eingeben
             echo "Command nicht erkannt - bitte erneut eingeben"
         fi
     done
-################        
+    
+    #else clause zu erster eingabe, wenn eingabe keine zweierpotenz ist
     else
         echo " "
-        echo -e "\e[31mEingabe muss eine Zweierpotenz sein\e[0m" #else clause zu erster eingabe, wenn eingabe keine zweierpotenz ist
+        echo -e "\e[31mEingabe muss eine Zweierpotenz sein\e[0m" 
         echo " "
     fi
 done
