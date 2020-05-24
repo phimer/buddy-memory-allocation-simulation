@@ -121,8 +121,16 @@ function allocate() {
                     #echo "idCount = $idCount"
                 fi       
                 done
+
+
             
             mem=$(("$mem"*2)) #dann ein mal verdoppeln, da so lange geteilt wurde, bis mem<task, man will aber dass task noch in mem passt
+
+            #wenn man 1 allocaten will, wird geteilt bis mem=0 ist, dann wird mem*2 auch null, muss aber 1 sein, deshalb diese if
+            if [ "$mem" -eq 0 ]
+            then
+                mem=1
+            fi
             
             tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
 
@@ -319,6 +327,14 @@ function allocate() {
 
 
                 local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist (mathematisch so gelöst) - aber der buddy muss ja größer als der task sein
+
+
+                #wenn man 1 allocaten will, wird geteilt bis mem=0 ist, dann wird mem*2 auch null, muss aber 1 sein, deshalb diese if
+                if [ "$memToAdd" -eq 0 ]
+                then
+                    memToAdd=1
+                fi
+                
                 tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
 
                 idCountMinusOne=$(("$idCount"-1))
