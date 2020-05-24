@@ -1,11 +1,5 @@
 #! /usr/bin/bash
 
-##################
-#######fixen
-#WENN MAN 1 ALLOCATED BEKOMMT DER BUDDY DIE GRÖßE 0
-#Beim Teilvorgang if 0 then 1 machen
-#####################
-
 
 
 # Das ganze Programm besteht im Groben aus 3 großen Funktionen, sowie 4 Listen und einem Dictionary
@@ -334,7 +328,7 @@ function allocate() {
                 then
                     memToAdd=1
                 fi
-                
+
                 tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
 
                 idCountMinusOne=$(("$idCount"-1))
