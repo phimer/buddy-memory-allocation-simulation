@@ -1,9 +1,4 @@
 #! /usr/bin/bash
-#MASTER#
-##################
-#######fixen
-#WENN MAN 1 ALLOCATED BEKOMMT DER BUDDY DIE GRÖßE 0
-#####################
 
 
 
@@ -120,8 +115,16 @@ function allocate() {
                     #echo "idCount = $idCount"
                 fi       
                 done
+
+
             
             mem=$(("$mem"*2)) #dann ein mal verdoppeln, da so lange geteilt wurde, bis mem<task, man will aber dass task noch in mem passt
+
+            #wenn man 1 allocaten will, wird geteilt bis mem=0 ist, dann wird mem*2 auch null, muss aber 1 sein, deshalb diese if
+            if [ "$mem" -eq 0 ]
+            then
+                mem=1
+            fi
             
             tasklist+=("$mem") #aktiver task kommt in die taskliste (hier mit mem gerechnet)
 
@@ -180,6 +183,8 @@ function allocate() {
             if [ "$task" -gt "$half" ] #task ist größer als die halbierung des buddys, dh er passt direkt in diesen buddy, und man muss den buddy nicht weiter halbieren
             then 
                 
+                echo -e "\e[31mTask passt direkt rein\e[0m"
+
                 tasklist+=("$sizeCheck") #der buddy wird in die TASKLISTE gesetzt, es wird sizecheck benutzt, da diese variable den passenden leeren buddy aus der for loop darüber hat
                 taskidlist+=("${buddyidlist["$indexForDelete"]}") #entsprechende id aus buddyidlist in taskidlist kopieren, indexForDelete wurde in der loop darüber gespeichert, ist also der index des passenden buddys
                 echo -e "\e[32mTask $task erfolgreich allocated - benötigte $sizeCheck Speicher\e[0m"
@@ -211,6 +216,8 @@ function allocate() {
             elif [ "$task" -le "$half" ] #task ist kleiner oder gleich der hälfte des buddys, also muss noch ein oder mehrmals halbiert werden, um den kleinst möglichen buddy zu finden in den der task passt
             then
                
+                echo -e "\e[31mTask ist kleiner gleich der Hälfte des buddys -> muss noch paar mal halbiert werden\e[0m"
+
                 #echo "half $half"
                 
                 #echo "indexForDelete $indexForDelete"
@@ -314,6 +321,14 @@ function allocate() {
 
 
                 local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist (mathematisch so gelöst) - aber der buddy muss ja größer als der task sein
+
+
+                #wenn man 1 allocaten will, wird geteilt bis mem=0 ist, dann wird mem*2 auch null, muss aber 1 sein, deshalb diese if
+                if [ "$memToAdd" -eq 0 ]
+                then
+                    memToAdd=1
+                fi
+
                 tasklist+=("$memToAdd") #wird nun als aktiver task in die tasklist geaddet
 
                 idCountMinusOne=$(("$idCount"-1))
