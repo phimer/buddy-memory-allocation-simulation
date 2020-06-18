@@ -220,20 +220,8 @@ function allocate() {
                 loopCount=0 #wird weiter unten benötigt um mit zu zählen wie oft die loop läuft, wichtig für if unten; wird hier nur auf 0 gesetzt, wichtig, dass es immer wieder auf 0 gesetzt wird
 
 
-                #weiß nicht mehr ob das noch benutzt wird, glaube nicht
-                local doubleHalf=$(("$half"/2)) #wenn buddy für den task nur noch einmal geteilt werden muss (also größer als die hälfte der aktuellen hälfte ist), dann wird etwas anderes ins dictionary geschrieben, deshlab hier der check
-                local halfCheck=false
-
-
-                #####
-                # if [ "$task" -gt "$doubleHalf" ]
-                # then 
-                #     halfCheck=true
-
-                # fi
-
-
-
+                
+               
                 #nun muss wieder geteilt werden bis der task perfekt in den buddy passt (ähnliches Verfahren wie am Anfang dieser Funktion)
                 while [ "$task" -le "$half" ] #hier wird wieder so lange geteilt, bis der kleinst mögliche buddy gefunden wurde, jede Teilung wird als leerer Buddy in die buddyliste geschrieben
                                                 #wieder so lange bis der task größer als die halbierung ist (muss am ende verdoppelt werden, s. 10 Zeilen unten)
@@ -254,8 +242,8 @@ function allocate() {
 
 
 
-##################################################################################################################################################################
-                    #dieser teil ist extrem wichtig. Bei der ersten Teilung muss der neue buddy die Parent ID vom buddy bekommen aus dem er geteilt wurde (wird ins dict geschrieben),
+
+                    #Bei der ersten Teilung muss der neue buddy die Parent ID vom buddy bekommen aus dem er geteilt wurde (wird ins dict geschrieben),
                     #wenn danach weiter geteilt wird, wird wieder id und parent id über idCount und idCountMinusOne geregelt
 
                     #"$halfCheck" = true 
@@ -272,7 +260,7 @@ function allocate() {
                   
 
                     fi
-##################################################################################################################################################################
+
                     
 
                     idCount=$(("$idCount"+1)) #idCount hochzählen
@@ -518,37 +506,6 @@ function mergeBuddys() {
     done
 }
 
-###############testzeugs########################
-inoo=1
-function testrun() {
-
-
-    local task=$1
-    echo $inoo
-    echo "TASK: $1"
-    allocate "$memory" "$task"
-    echo " "
-    printList
-    
-    devAdd
-    echo "-----------------------------------------------------------------------------------------------"
-    
-    inoo=$(("$inoo"+1))
-}
-
-function testrunD() {
-
-    echo ""
-    local k=$1
-    echo -e "\e[45mTask to deallocate: $k\e[0m"
-    deallocate "$k"
-    printList
-   
-    devAdd
-
-}
-###############testzeugs########################
-
 
 
 # function printed einfach alle listen, so sieht user was im programm passiert
@@ -572,7 +529,7 @@ function printList() {
 function checkIfPowerOfTwo() {
 
     n=$1
-    (( n > 0 && (n & (n - 1)) == 0 )) #von so, noch keine ahnung was hier returned wird?############remove###############https://unix.stackexchange.com/questions/481552/check-if-numbers-from-command-line-are-powers-of-2/481558
+    (( n > 0 && (n & (n - 1)) == 0 )) #prüft Binärwerte von n mit (n-1), wenn n&(n-1) == 0 ist und ob n größer 0
 }
 
 
