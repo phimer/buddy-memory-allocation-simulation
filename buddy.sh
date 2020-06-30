@@ -254,8 +254,7 @@ function allocate() {
 
 
 
-##################################################################################################################################################################
-                    #dieser teil ist extrem wichtig. Bei der ersten Teilung muss der neue buddy die Parent ID vom buddy bekommen aus dem er geteilt wurde (wird ins dict geschrieben),
+                    #Bei der ersten Teilung muss der neue buddy die Parent ID vom buddy bekommen aus dem er geteilt wurde (wird ins dict geschrieben),
                     #wenn danach weiter geteilt wird, wird wieder id und parent id über idCount und idCountMinusOne geregelt
 
                     #"$halfCheck" = true 
@@ -272,7 +271,7 @@ function allocate() {
                   
 
                     fi
-##################################################################################################################################################################
+
                     
 
                     idCount=$(("$idCount"+1)) #idCount hochzählen
