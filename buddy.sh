@@ -185,22 +185,14 @@ function allocate() {
                
                 echo -e "\e[31mTask ist kleiner gleich der Hälfte des buddys -> muss noch ein oder mehr mal halbiert werden\e[0m"
 
-                #echo "half $half"
                 
-                #echo "indexForDelete $indexForDelete"
-
-
-
                 #buddy aus buddylist löschen, da er nun aufgeteilt wird
-                
                 unset buddylist["$indexForDelete"] #der task wird aus der buddyliste gelöscht, da er nun benutzt wird
                 local cloneList=("${buddylist[@]}") #clone
                 buddylist=("${cloneList[@]}") #clone
 
 
-               
                 #buddy ID aus buddyIDlist löschen, da dieser task erstmal nicht mehr existiert
-
                 local saveIndexOfDeletedBuddy="${buddyidlist[$indexForDelete]}" #id saven, da sie vielleicht wieder ins dictionary als parent id geschrieben wird
                 
                 unset buddyidlist["$indexForDelete"] #buddy ID aus buddyIDlist löschen
@@ -253,10 +245,7 @@ function allocate() {
                     
 
                     idCount=$(("$idCount"+1)) #idCount hochzählen
-                    #echo "idCount = $idCount"
-
-
-                    #echo "half $half"
+                  
                     
                     half=$(("$half"/2)) #buddys werden wieder so lange geteilt bis passt
                     #echo "half after half $half"
@@ -266,12 +255,7 @@ function allocate() {
                     #echo "half added to buddylist: $half"
                 done
 
-                # local lang="${#buddylist[@]}"
-                # lang=$(("$lang"-1))
-                #unset buddylist["$lang"]
-                #local cloneList=("${buddylist[@]}")
-                #buddylist=("${cloneList[@]}")
-                #echo "remove from buddylist: $half"
+                
 
 
                 local memToAdd=$(("$half"*2)) #am ende doppelte der hälfte in task liste adden, da buddy verkleinert wurde bis task größer als der buddy ist (mathematisch so gelöst) - aber der buddy muss ja größer als der task sein
@@ -367,7 +351,7 @@ function deallocate() {
 
 
 
-        for (( c=1; c<="$mergeLength"; c++ )) #mergeBuddys function wird so oft gecallt wie buddys in der liste sind #####(-1 reicht wahrscheinlich)
+        for (( c=1; c<="$mergeLength"; c++ )) #mergeBuddys function wird so oft gecallt wie buddys in der liste sind
         do
             mergeBuddys #function wird gecallt
             
