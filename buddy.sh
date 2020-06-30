@@ -28,7 +28,7 @@ tasklist=() #liste für aktive tasks (befüllte buddys)
 buddylist=() #liste für leere buddys
 taskidlist=() #liste für die id der aktiven buddys
 buddyidlist=() #liste für id der leeren buddys
-declare -A idAssign #dictionary für id->vater id
+declare -A idAssign #dictionary für id -> vater id
 
 idCount=1 #wichtig, regelt id zuweisungen und vater ids
 
@@ -119,7 +119,7 @@ function allocate() {
 
     elif [ "${#buddylist[@]}" -gt 0 ] #sobald die erste allocation durchgeführt wurde, wird ab dann diese methode benutzt (buddylist > 0)
     then
-        #echo "else case"
+        
         #FORLOOP
        
        
@@ -128,7 +128,7 @@ function allocate() {
             #DIE BUDDYS WERDEN NACHEINANDER DURCHLAUFEN UND ÜBERSCHREIBEN $sizeCheck SO LANGE BIS DER KLEINSTE BUDDY PASST (oder einer der kleinsten wenn es mehrere gibt (-le))
         do 
             
-            if [ "$elem" -ge "$task" ] && [ "$elem" -le "$sizeCheck" ] # wenn task kleiner als elembuddy(aktueller buddy der for loop) und elembuddy kleiner als der buddy vorher in der liste [?< oder <= sollte egal sein?]
+            if [ "$elem" -ge "$task" ] && [ "$elem" -le "$sizeCheck" ] # wenn task kleiner als elembuddy(aktueller buddy der for loop) und elembuddy kleiner als der buddy vorher in der liste
             then   
                 sizeCheck=$elem #wird benutzt um zu prüfen, dass bei Durchlaufen durch Liste ein kleines und passender buddy nicht durch einen größeren passenden buddy überschrieben wird (man will den kleinst möglichen buddy finden der von der größe her passt)
                 
@@ -143,7 +143,7 @@ function allocate() {
             fi
             i=$(("$i"+1)) #i++ um index zu finden
          
-         
+
         done
 
 
@@ -164,24 +164,15 @@ function allocate() {
                 tasklist+=("$sizeCheck") #der buddy wird in die TASKLISTE gesetzt, es wird sizecheck benutzt, da diese variable den passenden leeren buddy aus der for loop darüber hat
                 taskidlist+=("${buddyidlist["$indexForDelete"]}") #entsprechende id aus buddyidlist in taskidlist kopieren, indexForDelete wurde in der loop darüber gespeichert, ist also der index des passenden buddys
                 echo -e "\e[32mTask $task erfolgreich allocated - benötigte $sizeCheck Speicher\e[0m"
-    
-                
-                #taskidlist+=("$idCount") #task bekommt id seines "buddys", da aber oben schon einmal hoch gezählt wurde, muss task jetzt count-1 bekommen
-                
-                #buddylist=( "${buddylist[@]/$elemFromForLoop}" )
-                #echo "indexDelete $indexForDelete"
-              
+
 
                 #task aus buddylist löschen, da er oben drüber in tasklist gesetzt wurde
-               
                 unset buddylist["$indexForDelete"] #es wird der buddy aus der buddylist gelöscht, da er 4 zeilen darüber als nun aktiver task in die tasklist gesetzt wurde; man benutzt wieder indexForDelete, da die indices in allen listen parallel sind
                 local cloneList=("${buddylist[@]}") #clone zeugs, bin noch nicht sicher ob man es noch braucht, hat davor bei unset "null" geschrieben statt zu löschen
                 buddylist=("${cloneList[@]}") #diese zeile + zeile darüber wahrscheinlich obsolete
                 
                 
-
-                #id aus buddyidlist löschen, das er oben drüber in taskidlist gesetzt wurde
-                
+                #id aus buddyidlist löschen, das er oben drüber in taskidlist gesetzt wurde 
                 unset buddyidlist["$indexForDelete"] #id wird aus der buddyIDlist gelöscht, da die id nun in taskidlist ist
                 local cloneIdList=("${buddyidlist[@]}") #clone
                 buddyidlist=("${cloneIdList[@]}") 
@@ -192,7 +183,7 @@ function allocate() {
             elif [ "$task" -le "$half" ] #task ist kleiner oder gleich der hälfte des buddys, also muss noch ein oder mehrmals halbiert werden, um den kleinst möglichen buddy zu finden in den der task passt
             then
                
-                echo -e "\e[31mTask ist kleiner gleich der Hälfte des buddys -> muss noch paar mal halbiert werden\e[0m"
+                echo -e "\e[31mTask ist kleiner gleich der Hälfte des buddys -> muss noch ein oder mehr mal halbiert werden\e[0m"
 
                 #echo "half $half"
                 
