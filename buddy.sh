@@ -484,7 +484,7 @@ function mergeBuddys() {
 # function printed einfach alle listen, so sieht user was im programm passiert
 function printList() {
     echo "---------"
-    echo -e "\e[36mbuddylists: ${buddylist[@]}\e[0m"
+    echo -e "\e[36mbuddylist: ${buddylist[@]}\e[0m"
     echo -e "\e[36mBuddy ID list: ${buddyidlist[@]}\e[0m"
     echo -e "\e[33mtasklist: ${tasklist[@]}\e[0m"
     echo -e "\e[33mTask ID list: ${taskidlist[@]}\e[0m"
