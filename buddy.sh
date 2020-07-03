@@ -112,7 +112,7 @@ function allocate() {
 
         else #wenn der Task > Speicher (von User festgelegt), bekommt user die meldung, dass Task zu groß für den Speicher ist
 
-            echo -e "e[31mTask $task ist zu groß, nicht genug speicher verfügbar\e[0m"
+            echo -e "\e[31mTask $task ist zu groß, nicht genug speicher verfügbar\e[0m"
 
         fi
 
@@ -353,7 +353,7 @@ function deallocate() {
 
         for (( c=1; c<="$mergeLength"; c++ )) #mergeBuddys function wird so oft gecallt wie buddys in der liste sind
         do
-            mergeBuddys #function wird gecallt
+            mergeBuddys
             
         done
        
@@ -500,7 +500,7 @@ function printList() {
 
 # checkt ob Zweierpotenz, wichtig für erste user eingabe(eingabe muss zweierpotenz sein)
 function checkIfPowerOfTwo() {
-
+    
     n=$1
     (( n > 0 && (n & (n - 1)) == 0 )) #prüft Binärwerte von n mit (n-1), wenn n&(n-1) == 0 ist und ob n größer 0
 }
